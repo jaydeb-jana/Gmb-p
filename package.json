@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node run-dev.js",
-    "start": "node run-dev.js",
+    "dev": "vite",
+    "start": "vite",
     "build": "vite build",
     "preview": "vite preview --port 3000 --host 0.0.0.0",
     "clean": "rm -rf dist",
@@ -24,6 +24,7 @@
     "qrcode": "^1.5.4",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
+    "react-router-dom": "^7.18.4",
     "tsx": "^4.21.0",
     "vite": "^8.3.0"
   },

@@ -12,6 +12,7 @@ import {
   Layers,
   X,
   SlidersHorizontal,
+  Eye,
 } from 'lucide-react';
 import { BusinessSettings } from '../../types';
 import { api } from '../../lib/api';
@@ -37,7 +38,13 @@ export type StandLayoutType =
   | 'cyber-hud'
   | 'rose-boutique'
   | 'dynamic-burst'
-  | 'executive-navy';
+  | 'executive-navy'
+  | 'dental-clinic'
+  | 'carbon-auto'
+  | 'pizzeria-rustic'
+  | 'fitness-volt'
+  | 'diamond-luxury'
+  | 'gentlemen-barber';
 
 export interface StandTemplate {
   id: string;
@@ -47,98 +54,169 @@ export interface StandTemplate {
   layoutType: StandLayoutType;
   description: string;
   swatchColors: [string, string];
+  qrColor: string;
 }
 
 export const STAND_TEMPLATES: StandTemplate[] = [
   {
     id: 'google-official',
     name: 'Google Official Canopy',
-    category: 'Official Enterprise',
+    category: 'Official & Classic',
     badge: 'Official Google',
     layoutType: 'official-google',
     description: 'Official Google 4-color stripes, "Review us on Google" badge, 5.0 gold stars, verified Maps checkmark & focus QR scanner.',
     swatchColors: ['#4285f4', '#34a853'],
+    qrColor: '#1a73e8',
   },
   {
     id: 'modern-split',
-    name: 'Split Horizon Podium',
-    category: 'Dual-Tone Dark',
+    name: 'Split Horizon Obsidian',
+    category: 'Tech & Gaming',
     badge: 'Trending',
     layoutType: 'split-hero',
     description: '38% deep obsidian dark banner with glowing cyan HUD badge, transitioning to an elevated QR pedestal.',
     swatchColors: ['#0b1120', '#22d3ee'],
+    qrColor: '#0284c7',
   },
   {
     id: 'luxury-crest',
     name: 'Royal Gold Crest',
-    category: 'Luxury Boutique',
-    badge: 'Premium',
+    category: 'Luxury & Boutique',
+    badge: '24K Gold',
     layoutType: 'luxury-crest',
     description: 'Double 24k gold metallic border with brass corner ornaments, royal crest laurel framing & serif typography.',
     swatchColors: ['#0a1128', '#f59e0b'],
+    qrColor: '#b45309',
   },
   {
     id: 'scandi-minimal',
     name: 'Scandinavian Noir',
-    category: 'Architectural',
-    badge: 'Modern',
+    category: 'Official & Classic',
+    badge: 'Minimal',
     layoutType: 'scandi-minimal',
     description: 'Swiss typography, solid black geometric frame, monospace tags & camera focus corner brackets.',
     swatchColors: ['#000000', '#71717a'],
+    qrColor: '#000000',
   },
   {
     id: 'emerald-wellness',
     name: 'Emerald Eco Wellness',
-    category: 'Organic Care',
-    badge: 'Trust',
+    category: 'Medical & Wellness',
+    badge: 'Care',
     layoutType: 'emerald-wellness',
     description: 'Sage botanical curves, green client care pill & smooth pebble-rounded QR container for clinics & spas.',
     swatchColors: ['#064e3b', '#10b981'],
+    qrColor: '#059669',
   },
   {
     id: 'artisan-vintage',
     name: 'Artisan Woodcraft & Cafe',
-    category: 'Bistro & Bakery',
-    badge: 'Cozy',
+    category: 'Food & Dining',
+    badge: 'Warm Wood',
     layoutType: 'artisan-vintage',
     description: 'Stitched dashed vintage border, circular retro craft stamp & coffee-toned woodcraft plaque.',
     swatchColors: ['#ca8a04', '#422006'],
+    qrColor: '#78350f',
   },
   {
     id: 'cyber-hud',
     name: 'Cyberpunk HUD Terminal',
-    category: 'Gaming & Tech',
+    category: 'Tech & Gaming',
     badge: 'High-Tech',
     layoutType: 'cyber-hud',
     description: 'Futuristic terminal with neon cyan glowing HUD brackets, status pulse indicator & holographic corners.',
     swatchColors: ['#070b14', '#06b6d4'],
+    qrColor: '#0891b2',
   },
   {
     id: 'rose-boutique',
     name: 'Rose Velvet & Glamour',
-    category: 'Salon & Spa',
-    badge: 'Glamour',
+    category: 'Luxury & Boutique',
+    badge: 'Salon & Spa',
     layoutType: 'rose-boutique',
     description: 'Roman arch canopy top with champagne typography, soft rose blush gradient & glassmorphic star ribbon.',
     swatchColors: ['#db2777', '#f472b6'],
+    qrColor: '#db2777',
   },
   {
     id: 'dynamic-burst',
     name: 'Dynamic Sunset Burst',
-    category: 'Dining & Events',
+    category: 'Food & Dining',
     badge: 'High Impact',
     layoutType: 'dynamic-burst',
     description: 'Dynamic 15-degree angled sunset gradient header block with comic pop badge & vibrant drop-shadow stars.',
     swatchColors: ['#ea580c', '#ef4444'],
+    qrColor: '#ea580c',
   },
   {
     id: 'executive-navy',
     name: 'Executive Cobalt Plaque',
-    category: 'Corporate Legal',
-    badge: 'Executive',
+    category: 'Official & Classic',
+    badge: 'Corporate',
     layoutType: 'executive-navy',
     description: 'Vertical cobalt accent band with silver pinstripe & formal Client Satisfaction Index seal.',
     swatchColors: ['#1e3a8a', '#94a3b8'],
+    qrColor: '#1e3a8a',
+  },
+  {
+    id: 'dental-clinic',
+    name: 'Pure Clinical Dental & Med',
+    category: 'Medical & Wellness',
+    badge: 'Healthcare',
+    layoutType: 'dental-clinic',
+    description: 'Sterile healthcare cyan & teal styling, medical cross emblem, patient care guarantee & crisp hygienic QR pedestal.',
+    swatchColors: ['#0284c7', '#0d9488'],
+    qrColor: '#0284c7',
+  },
+  {
+    id: 'carbon-auto',
+    name: 'Motorsport Carbon Weave',
+    category: 'Sports & Automotive',
+    badge: 'Garage & Auto',
+    layoutType: 'carbon-auto',
+    description: 'Dark carbon weave styling, racing red speed stripes, bold mechanic typography & high-impact red caliper focus corners.',
+    swatchColors: ['#18181b', '#dc2626'],
+    qrColor: '#dc2626',
+  },
+  {
+    id: 'pizzeria-rustic',
+    name: 'Authentic Italian Trattoria',
+    category: 'Food & Dining',
+    badge: 'Pizzeria',
+    layoutType: 'pizzeria-rustic',
+    description: 'Warm Tuscan cream canvas with tricolor Italian ribbon, artisanal olive laurels & wood-fired bistro lettering.',
+    swatchColors: ['#991b1b', '#15803d'],
+    qrColor: '#b91c1c',
+  },
+  {
+    id: 'fitness-volt',
+    name: 'Iron Volt Athletic & Gym',
+    category: 'Sports & Automotive',
+    badge: 'Fitness & Gym',
+    layoutType: 'fitness-volt',
+    description: 'Stealth charcoal finish with ultra-bright Neon Volt Lime accents, high-energy chevrons & performance QR container.',
+    swatchColors: ['#09090b', '#84cc16'],
+    qrColor: '#18181b',
+  },
+  {
+    id: 'diamond-luxury',
+    name: 'Pearl & Diamond Haute Joaillerie',
+    category: 'Luxury & Boutique',
+    badge: 'High Jewelry',
+    layoutType: 'diamond-luxury',
+    description: 'Pearl ivory texture with delicate 24k gold filigree border, sparkling diamond emblem & fine serif typography.',
+    swatchColors: ['#1e293b', '#eab308'],
+    qrColor: '#b45309',
+  },
+  {
+    id: 'gentlemen-barber',
+    name: "Gentlemen's Barber & Lounge",
+    category: 'Specialty & Craft',
+    badge: 'Barbershop',
+    layoutType: 'gentlemen-barber',
+    description: 'Mahogany wood grain & warm brass plaque, classic vintage barber pole ribbon & master razor heraldry.',
+    swatchColors: ['#292524', '#b45309'],
+    qrColor: '#78350f',
   },
 ];
 
@@ -183,9 +261,25 @@ export function ReviewLinkTab({
   const [downloadingTent, setDownloadingTent] = useState<boolean>(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('google-official');
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState<boolean>(false);
+  const [activeCategory, setActiveCategory] = useState<string>('All');
+  const CATEGORIES = [
+    'All',
+    'Official & Classic',
+    'Luxury & Boutique',
+    'Food & Dining',
+    'Medical & Wellness',
+    'Sports & Automotive',
+    'Tech & Gaming',
+    'Specialty & Craft',
+  ];
 
   const selectedTemplate =
     STAND_TEMPLATES.find((t) => t.id === selectedTemplateId) || STAND_TEMPLATES[0];
+
+  const filteredTemplates =
+    activeCategory === 'All'
+      ? STAND_TEMPLATES
+      : STAND_TEMPLATES.filter((t) => t.category === activeCategory);
 
   const fullReviewUrl = `${window.location.origin}/review/${settings.customSlug}`;
   const isLightQr = checkIsLightColor(digitalQrColor);
@@ -215,11 +309,14 @@ export function ReviewLinkTab({
     };
   }, [fullReviewUrl, digitalQrColor]);
 
-  // Fetch Stand QR Code (strictly independent, fixed high-contrast dark blue #1e3a8a, NEVER affected by digital color changes)
+  // Stand QR code color dynamically synchronizes with the selected template's matching theme color
+  const standQrColor = selectedTemplate.qrColor || '#1a73e8';
+
+  // Fetch Stand QR Code (dynamically matches the selected template's theme color)
   useEffect(() => {
     let isMounted = true;
     setLoadingStandQr(true);
-    api.getQrCode(fullReviewUrl, '#1e3a8a')
+    api.getQrCode(fullReviewUrl, standQrColor)
       .then(async (data) => {
         if (isMounted && data.qrDataUrl) {
           const composited = await createQrWithCenterLogo(data.qrDataUrl, GOOGLE_QR_REMOTE_URL);
@@ -238,7 +335,7 @@ export function ReviewLinkTab({
     return () => {
       isMounted = false;
     };
-  }, [fullReviewUrl]);
+  }, [fullReviewUrl, standQrColor]);
 
   // Close modal on Escape
   useEffect(() => {
@@ -383,20 +480,22 @@ export function ReviewLinkTab({
         {/* 1. HIGH-RESOLUTION QR CODE (DIGITAL) */}
         <div className="bg-white border border-[#dadce0] rounded-xl p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <h3 className="font-bold text-sm text-[#202124]">
-                High-Resolution QR Code (Digital)
-              </h3>
-              <span className="text-[10px] font-semibold text-[#1a73e8] bg-[#e8f0fe] px-2 py-0.5 rounded-full border border-[#d2e3fc]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2 border-b border-[#dadce0] pb-3.5">
+              <div>
+                <h3 className="font-bold text-sm sm:text-base text-[#202124]">
+                  High-Resolution QR Code (Digital)
+                </h3>
+                <p className="text-xs text-[#5f6368] mt-0.5">
+                  Direct PNG export with Level-H error correction for instant mobile camera detection.
+                </p>
+              </div>
+              <span className="self-start sm:self-auto text-[10px] font-semibold text-[#1a73e8] bg-[#e8f0fe] px-2.5 py-1 rounded-full border border-[#d2e3fc] shrink-0 whitespace-nowrap">
                 Center Logo Embedded
               </span>
             </div>
-            <p className="text-xs text-[#5f6368] mb-5 leading-relaxed">
-              Equipped with the official Google emblem in the center with Level-H error correction for instant mobile camera detection.
-            </p>
 
             <div
-              className={`flex justify-center p-6 rounded-xl border max-w-xs mx-auto transition-colors ${
+              className={`flex justify-center items-center p-6 rounded-2xl border max-w-xs mx-auto transition-colors shadow-2xs ${
                 isLightQr
                   ? 'bg-[#0b1120] border-[#334155]'
                   : 'bg-[#f8f9fa] border-[#dadce0]'
@@ -411,7 +510,7 @@ export function ReviewLinkTab({
                   <img
                     src={digitalQrDataUrl}
                     alt={`Google Review QR code for ${settings.businessName}`}
-                    className={`w-52 h-52 rounded-md shadow-xs p-2 ${
+                    className={`w-52 h-52 rounded-xl shadow-xs p-2 transition-all ${
                       isLightQr ? 'bg-[#0b1120]' : 'bg-white'
                     }`}
                   />
@@ -420,26 +519,39 @@ export function ReviewLinkTab({
             </div>
 
             {isLightQr && (
-              <div className="mt-2 text-center">
+              <div className="mt-2.5 text-center">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc]">
-                  Dark contrast background active for white / light QR scan visibility
+                  Dark contrast preview active for white / light QR scan visibility
                 </span>
               </div>
             )}
 
             {/* QR Code Color Customizer */}
-            <div className="mt-4 p-3.5 bg-[#f8f9fa] rounded-xl border border-[#dadce0] space-y-2">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <span className="text-xs font-bold text-[#202124] flex items-center gap-1.5">
-                  <Palette className="w-3.5 h-3.5 text-[#1a73e8]" />
-                  <span>QR Code Color</span>
-                  <span className="text-[10px] text-[#5f6368] font-normal hidden sm:inline">
-                    (Digital QR only &bull; Table Stand below is independent)
+            <div className="mt-4 p-3.5 sm:p-4 bg-[#f8f9fa] rounded-xl border border-[#dadce0] space-y-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-6 h-6 rounded-md bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center shrink-0">
+                    <Palette className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-[#202124] block leading-tight whitespace-nowrap">
+                      QR Code Color
+                    </span>
+                    <span className="text-[10px] text-[#5f6368] block leading-tight truncate">
+                      Digital QR download only
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full border border-black/15 shadow-2xs shrink-0"
+                    style={{ backgroundColor: digitalQrColor }}
+                  />
+                  <span className="font-mono text-[11px] font-semibold text-[#3c4043] uppercase bg-white px-2 py-0.5 rounded-md border border-[#dadce0] shadow-2xs">
+                    {digitalQrColor}
                   </span>
-                </span>
-                <span className="font-mono text-[11px] font-semibold text-[#5f6368] uppercase bg-white px-2 py-0.5 rounded border border-[#dadce0] self-start sm:self-auto">
-                  {digitalQrColor}
-                </span>
+                </div>
               </div>
 
               {/* Color Swatches Grid + Custom Picker */}
@@ -457,8 +569,8 @@ export function ReviewLinkTab({
                         isPresetLight ? 'border-2 border-[#5f6368]/40' : 'border border-black/15'
                       } ${
                         isActive
-                          ? 'ring-2 ring-offset-2 ring-[#1a73e8] scale-110'
-                          : 'hover:scale-105'
+                          ? 'ring-2 ring-offset-2 ring-[#1a73e8] scale-110 z-10'
+                          : 'hover:scale-105 opacity-90 hover:opacity-100'
                       }`}
                       style={{ backgroundColor: preset.color }}
                     >
@@ -487,7 +599,8 @@ export function ReviewLinkTab({
                   <div
                     className="w-4 h-4 rounded-full shadow-2xs"
                     style={{
-                      background: 'conic-gradient(from 90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
+                      background:
+                        'conic-gradient(from 90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)',
                     }}
                   />
                 </label>
@@ -495,14 +608,17 @@ export function ReviewLinkTab({
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-[#dadce0] flex items-center justify-between">
-            <span className="text-xs text-[#5f6368]">Format: PNG (1024x1024px)</span>
+          <div className="mt-6 pt-4 border-t border-[#dadce0] flex flex-col sm:flex-row items-center justify-between gap-3">
+            <span className="text-xs text-[#5f6368]">
+              Format: PNG (1024&times;1024px) &bull; High Res
+            </span>
             <button
+              type="button"
               onClick={handleDownloadQr}
               disabled={!digitalQrDataUrl}
-              className="px-4 py-2 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-2 cursor-pointer shadow-xs disabled:opacity-50"
+              className="w-full sm:w-auto px-5 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95 disabled:opacity-50"
             >
-              <Download className="w-3.5 h-3.5" />
+              <Download className="w-4 h-4" />
               <span>Download PNG Image</span>
             </button>
           </div>
@@ -542,6 +658,7 @@ export function ReviewLinkTab({
               />
             </div>
 
+
             {/* Quick Active Template Summary Bar with Change Trigger */}
             <div className="mt-3 p-3 bg-[#f8f9fa] border border-[#dadce0] rounded-xl flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
@@ -560,7 +677,7 @@ export function ReviewLinkTab({
                     {selectedTemplate.name}
                   </span>
                   <span className="text-[10px] text-[#5f6368] block truncate">
-                    {selectedTemplate.category} &bull; 10 distinct designs available
+                    {selectedTemplate.category} &bull; 16 premium commercial designs available
                   </span>
                 </div>
               </div>
@@ -570,7 +687,7 @@ export function ReviewLinkTab({
                 onClick={() => setIsTemplateModalOpen(true)}
                 className="text-xs font-semibold text-[#1a73e8] hover:underline flex items-center gap-1 shrink-0 cursor-pointer"
               >
-                <span>Browse All (10)</span>
+                <span>Browse All (16)</span>
               </button>
             </div>
           </div>
@@ -580,28 +697,31 @@ export function ReviewLinkTab({
             <span className="text-xs text-[#5f6368]">
               Standard 4x6" table tent format &bull; {selectedTemplate.name}
             </span>
-            <button
-              type="button"
-              onClick={handleDownloadTent}
-              disabled={downloadingTent || !standQrDataUrl}
-              className="w-full sm:w-auto px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
-            >
-              {downloadingTent ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              <span>Download</span>
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+
+              <button
+                type="button"
+                onClick={handleDownloadTent}
+                disabled={downloadingTent || !standQrDataUrl}
+                className="flex-1 sm:flex-initial px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] disabled:opacity-50 text-white rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95"
+              >
+                {downloadingTent ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Download className="w-4 h-4" />
+                )}
+                <span>Download Print PNG</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ----------------- CHANGE TEMPLATE MODAL (10 DISTINCT DESIGNS) ----------------- */}
+      {/* ----------------- CHANGE TEMPLATE MODAL (16 PREMIUM DESIGNS) ----------------- */}
       {isTemplateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/55 backdrop-blur-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs">
           <div
-            className="bg-white rounded-2xl border border-[#dadce0] shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl border border-[#dadce0] shadow-2xl max-w-5xl w-full max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
             role="dialog"
             aria-modal="true"
           >
@@ -613,10 +733,10 @@ export function ReviewLinkTab({
                 </div>
                 <div>
                   <h3 className="font-bold text-base sm:text-lg text-[#202124]">
-                    Select Counter Stand Template (10 Distinct Layouts)
+                    Select Counter Stand Template (16 Premium Commercial Designs)
                   </h3>
                   <p className="text-xs text-[#5f6368] mt-0.5">
-                    Click any design to immediately apply its unique structure, geometry, framing, and colors.
+                    Click any design to immediately apply its unique geometry, branding, typography, and colors.
                   </p>
                 </div>
               </div>
@@ -631,10 +751,44 @@ export function ReviewLinkTab({
               </button>
             </div>
 
-            {/* Modal Body: 10 Templates Grid */}
+            {/* Category Filter Tabs */}
+            <div className="px-4 sm:px-6 py-3 bg-[#f8f9fa] border-b border-[#dadce0] flex items-center gap-1.5 overflow-x-auto scrollbar-thin shrink-0">
+              {CATEGORIES.map((cat) => {
+                const isCatActive = activeCategory === cat;
+                const count =
+                  cat === 'All'
+                    ? STAND_TEMPLATES.length
+                    : STAND_TEMPLATES.filter((t) => t.category === cat).length;
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      isCatActive
+                        ? 'bg-[#1a73e8] text-white shadow-2xs'
+                        : 'bg-white text-[#5f6368] border border-[#dadce0] hover:bg-[#e8f0fe] hover:text-[#1a73e8]'
+                    }`}
+                  >
+                    <span>{cat}</span>
+                    <span
+                      className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full ${
+                        isCatActive
+                          ? 'bg-white/25 text-white'
+                          : 'bg-[#f1f3f4] text-[#5f6368]'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Modal Body: 16 Templates Grid */}
             <div className="flex-1 overflow-y-auto p-4 sm:p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
-                {STAND_TEMPLATES.map((tmpl) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
+                {filteredTemplates.map((tmpl) => {
                   const isSelected = tmpl.id === selectedTemplateId;
                   return (
                     <button
@@ -644,7 +798,7 @@ export function ReviewLinkTab({
                       className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between group relative ${
                         isSelected
                           ? 'border-[#1a73e8] bg-[#e8f0fe]/60 ring-2 ring-[#1a73e8] shadow-sm'
-                          : 'border-[#dadce0] bg-white hover:border-[#1a73e8]/50 hover:bg-[#f8f9fa]'
+                          : 'border-[#dadce0] bg-white hover:border-[#1a73e8]/50 hover:bg-[#f8f9fa] hover:shadow-xs'
                       }`}
                     >
                       {/* Top Swatches & Active Checkmark */}
@@ -658,7 +812,7 @@ export function ReviewLinkTab({
                             className="w-4 h-4 rounded-full border border-black/15 shrink-0 shadow-2xs"
                             style={{ backgroundColor: tmpl.swatchColors[1] }}
                           />
-                          <span className="text-[10px] font-semibold text-[#5f6368] uppercase tracking-wider ml-1">
+                          <span className="text-[10px] font-semibold text-[#5f6368] uppercase tracking-wider ml-1 truncate max-w-[110px]">
                             {tmpl.category}
                           </span>
                         </div>
@@ -685,7 +839,11 @@ export function ReviewLinkTab({
                         <span className="font-semibold text-[#1a73e8]">
                           {tmpl.badge}
                         </span>
-                        <span className={`text-[10px] font-medium ${isSelected ? 'text-[#1a73e8] font-bold' : 'text-[#5f6368]'}`}>
+                        <span
+                          className={`text-[10px] font-medium ${
+                            isSelected ? 'text-[#1a73e8] font-bold' : 'text-[#5f6368]'
+                          }`}
+                        >
                           {isSelected ? 'Active Design' : 'Click to Apply'}
                         </span>
                       </div>
@@ -704,7 +862,7 @@ export function ReviewLinkTab({
               <button
                 type="button"
                 onClick={() => setIsTemplateModalOpen(false)}
-                className="px-5 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium rounded-lg text-xs sm:text-sm shadow-xs transition-colors cursor-pointer"
+                className="px-6 py-2.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white font-medium rounded-xl text-xs sm:text-sm shadow-xs transition-colors cursor-pointer"
               >
                 Done / Apply
               </button>

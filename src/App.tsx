@@ -1,9 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  useNavigate,
+  useLocation,
+  useParams,
+  useSearchParams,
+  Navigate,
+} from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { AuthModal } from './components/auth/AuthModal';
 import { DashboardHeader } from './components/dashboard/DashboardHeader';
-import { DashboardNav, DashboardTab } from './components/dashboard/DashboardNav';
+import {
+  DashboardNav,
+  DashboardTab,
+  TAB_ROUTES,
+  getTabFromPath,
+} from './components/dashboard/DashboardNav';
 import { OverviewTab } from './components/dashboard/OverviewTab';
 import { BusinessSettingsTab } from './components/dashboard/BusinessSettingsTab';
 import { ReviewLinkTab } from './components/dashboard/ReviewLinkTab';
@@ -12,6 +27,7 @@ import { DocsTab } from './components/dashboard/DocsTab';
 import { PlansTab } from './components/dashboard/PlansTab';
 import { ContactTab } from './components/dashboard/ContactTab';
 import { SecurityTab } from './components/dashboard/SecurityTab';
+import { AdminDashboard } from './components/admin/AdminDashboard';
 import { PublicReviewPage } from './components/public/PublicReviewPage';
 import { BusinessSettings, CustomerReview, GoogleBusinessAccount } from './types';
 import { api } from './lib/api';
@@ -22,13 +38,42 @@ import {
   MessageSquare,
   Lock,
   RefreshCw,
-  Star,
-  CheckCircle2,
+  ShieldCheck,
 } from 'lucide-react';
 
+/**
+ * Public Review Page Route Wrapper
+ * Works standalone for public customers scanning the QR code,
+ * and also supports preview mode with "Back to Dashboard" for business owners.
+ */
+function PublicReviewRoute({ isPreviewMode = false }: { isPreviewMode?: boolean }) {
+  const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const isPreview = isPreviewMode || searchParams.get('preview') === 'true';
+
+  if (!slug) {
+    return <Navigate to="/" replace />;
+  }
+
+  return (
+    <PublicReviewPage
+      slug={slug}
+      onBackToDashboard={isPreview ? () => navigate('/review-links') : undefined}
+    />
+  );
+}
+
+/**
+ * Main Customer Dashboard Content with Dynamic Routing Sync
+ */
 function CustomerPortalContent() {
-  const { user, token, isLoading, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<DashboardTab>('overview');
+  const { user, token, isLoading, logout, impersonatorAdmin, stopImpersonation } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Active tab is directly driven by the browser URL route
+  const activeTab: DashboardTab = getTabFromPath(location.pathname);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   const [businessSettings, setBusinessSettings] = useState<BusinessSettings | null>(null);
@@ -36,11 +81,16 @@ function CustomerPortalContent() {
   const [reviews, setReviews] = useState<CustomerReview[]>([]);
   const [loadingData, setLoadingData] = useState<boolean>(false);
 
-  const [previewReviewPage, setPreviewReviewPage] = useState<boolean>(false);
-
-  const currentPath = window.location.pathname;
-  const isDirectReviewRoute = currentPath.startsWith('/review/');
-  const directSlug = isDirectReviewRoute ? currentPath.replace('/review/', '') : null;
+  // If Super Admin logs in and visits root '/', land them on Admin Panel
+  useEffect(() => {
+    if (
+      user &&
+      (user.role === 'admin' || user.email === 'info@arventaventures.online') &&
+      location.pathname === '/'
+    ) {
+      navigate('/admin');
+    }
+  }, [user, location.pathname]);
 
   const loadCustomerData = async () => {
     if (!token) return;
@@ -107,18 +157,21 @@ function CustomerPortalContent() {
     );
   }, [businessSettings, user]);
 
-  if (directSlug) {
-    return <PublicReviewPage slug={directSlug} />;
-  }
+  const handleTabChange = (tab: DashboardTab) => {
+    navigate(TAB_ROUTES[tab]);
+  };
 
-  if (previewReviewPage) {
-    return (
-      <PublicReviewPage
-        slug={currentSettings.customSlug}
-        onBackToDashboard={() => setPreviewReviewPage(false)}
-      />
-    );
-  }
+  const handleOpenPublicReview = () => {
+    navigate(`/review/${currentSettings.customSlug}?preview=true`);
+  };
+
+  const handleNavigateToHome = () => {
+    navigate('/');
+  };
+
+  const handleNavigateToSettings = () => {
+    navigate('/business-profile');
+  };
 
   if (isLoading) {
     return (
@@ -145,10 +198,10 @@ function CustomerPortalContent() {
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
                 <path d="M4 10V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V10" stroke="#1A73E8" strokeWidth="2" strokeLinecap="round"/>
                 <path d="M2 7L4.5 4H19.5L22 7L20 10H4L2 7Z" fill="#1A73E8"/>
-                <path d="M7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 11.1046 3 10" stroke="#EA4335" strokeWidth="2"/>
-                <path d="M11 10C11 11.1046 10.1046 12 9 12C7.89543 12 7 11.1046 7 10" stroke="#FBBC04" strokeWidth="2"/>
-                <path d="M15 10C15 11.1046 14.1046 12 13 12C11.8954 12 11 11.1046 11 10" stroke="#34A853" strokeWidth="2"/>
-                <path d="M19 10C19 11.1046 18.1046 12 17 12C15.8954 12 15 11.1046 15 10" stroke="#1A73E8" strokeWidth="2"/>
+                <path d="M7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 10" stroke="#EA4335" strokeWidth="2"/>
+                <path d="M11 10C11 11.1046 10.1046 12 9 12C7.89543 12 7 10" stroke="#FBBC04" strokeWidth="2"/>
+                <path d="M15 10C15 11.1046 14.1046 12 13 12C11.8954 12 11 10" stroke="#34A853" strokeWidth="2"/>
+                <path d="M19 10C19 11.1046 18.1046 12 17 12C15.8954 12 15 10" stroke="#1A73E8" strokeWidth="2"/>
                 <path d="M9 20V14H15V20" stroke="#1A73E8" strokeWidth="2"/>
               </svg>
             </div>
@@ -263,6 +316,29 @@ function CustomerPortalContent() {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex flex-col justify-between">
       <div>
+        {/* Sticky Impersonation Alert Banner */}
+        {impersonatorAdmin && (
+          <div className="bg-[#fef7e0] border-b border-[#f9ab00]/40 px-4 py-2.5 flex items-center justify-between gap-3 text-xs z-50 sticky top-0 shadow-xs">
+            <div className="flex items-center gap-2 text-[#b06000]">
+              <ShieldCheck className="w-4 h-4 text-[#e37400] shrink-0" />
+              <span>
+                <strong>Admin Impersonation Mode:</strong> Currently managing store for{' '}
+                <strong>{user?.fullName}</strong> ({user?.email}) as Super Admin.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                await stopImpersonation();
+                navigate('/admin');
+              }}
+              className="px-3.5 py-1.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer shrink-0"
+            >
+              Exit Impersonation &amp; Return to Admin Panel
+            </button>
+          </div>
+        )}
+
         <DashboardHeader
           user={user}
           googleAccount={googleAccount}
@@ -271,31 +347,37 @@ function CustomerPortalContent() {
           activeTab={activeTab}
           onToggleSidebar={() => setSidebarOpen(true)}
           onLogout={logout}
-          onNavigateToSettings={() => setActiveTab('business_settings')}
+          onNavigateToSettings={handleNavigateToSettings}
+          onNavigateToHome={handleNavigateToHome}
+          onNavigateToAdmin={() => navigate('/admin')}
         />
 
         <DashboardNav
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           activeTab={activeTab}
-          onChangeTab={setActiveTab}
+          onChangeTab={handleTabChange}
           businessName={currentSettings.businessName}
           businessLogo={currentSettings.businessLogo}
           user={user}
           googleAccount={googleAccount}
           pendingReviewsCount={pendingCount}
           onLogout={logout}
-          onOpenPublicPage={() => setPreviewReviewPage(true)}
+          onOpenPublicPage={handleOpenPublicReview}
         />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
+          {activeTab === 'admin_panel' && (
+            <AdminDashboard onSwitchToCustomerPortal={() => navigate('/')} />
+          )}
+
           {activeTab === 'overview' && (
             <OverviewTab
               settings={currentSettings}
               googleAccount={googleAccount}
               reviews={reviews}
-              onChangeTab={setActiveTab}
-              onOpenPublicPage={() => setPreviewReviewPage(true)}
+              onChangeTab={handleTabChange}
+              onOpenPublicPage={handleOpenPublicReview}
             />
           )}
 
@@ -309,7 +391,7 @@ function CustomerPortalContent() {
           {activeTab === 'review_links' && (
             <ReviewLinkTab
               settings={currentSettings}
-              onOpenPublicPage={() => setPreviewReviewPage(true)}
+              onOpenPublicPage={handleOpenPublicReview}
               onUpdateSlug={(newSlug) => {
                 setBusinessSettings((prev) => (prev ? { ...prev, customSlug: newSlug } : null));
               }}
@@ -328,7 +410,7 @@ function CustomerPortalContent() {
           )}
 
           {activeTab === 'plans' && (
-            <PlansTab />
+            <PlansTab onNavigateToAdmin={() => navigate('/admin')} />
           )}
 
           {activeTab === 'contact' && (
@@ -352,11 +434,45 @@ function CustomerPortalContent() {
   );
 }
 
+/**
+ * Top-Level App Routes Configuration
+ */
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* 1. Public Review Page routes (accessible by customers scanning QR or clicking link) */}
+      <Route path="/review/:slug" element={<PublicReviewRoute />} />
+      <Route path="/preview/:slug" element={<PublicReviewRoute isPreviewMode={true} />} />
+
+      {/* 2. Customer Dashboard Routes with individual URLs and full refresh persistence */}
+      <Route path="/" element={<CustomerPortalContent />} />
+      <Route path="/overview" element={<Navigate to="/" replace />} />
+      <Route path="/business-profile" element={<CustomerPortalContent />} />
+      <Route path="/settings" element={<Navigate to="/business-profile" replace />} />
+      <Route path="/review-links" element={<CustomerPortalContent />} />
+      <Route path="/qr-stands" element={<Navigate to="/review-links" replace />} />
+      <Route path="/ai-review" element={<CustomerPortalContent />} />
+      <Route path="/review-replies" element={<Navigate to="/ai-review" replace />} />
+      <Route path="/docs" element={<CustomerPortalContent />} />
+      <Route path="/plans" element={<CustomerPortalContent />} />
+      <Route path="/contact" element={<CustomerPortalContent />} />
+      <Route path="/security" element={<CustomerPortalContent />} />
+      <Route path="/admin" element={<CustomerPortalContent />} />
+      <Route path="/admin-panel" element={<Navigate to="/admin" replace />} />
+
+      {/* Fallback route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <ToastProvider>
       <AuthProvider>
-        <CustomerPortalContent />
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
       </AuthProvider>
     </ToastProvider>
   );

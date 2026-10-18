@@ -58,16 +58,19 @@ export function ReviewRepliesTab({
   useEffect(() => {
     if (settings && lastLoadedIdRef.current !== settings.id) {
       lastLoadedIdRef.current = settings.id;
-      if (settings.services && Array.isArray(settings.services) && settings.services.length > 0) {
-        setServicesList(settings.services);
+      if (settings.services && Array.isArray(settings.services)) {
+        const clean = settings.services.filter(
+          (s) => s !== 'Computer Repair' && s !== 'Gaming PC Build'
+        );
+        setServicesList(clean);
       } else if (settings.productsAndServices) {
         const parsed = settings.productsAndServices
           .split(/[,;\n]+/)
           .map((s) => s.trim())
-          .filter(Boolean);
-        setServicesList(parsed.length > 0 ? parsed : ['Computer Repair', 'Gaming PC Build']);
+          .filter((s) => Boolean(s) && s !== 'Computer Repair' && s !== 'Gaming PC Build');
+        setServicesList(parsed);
       } else {
-        setServicesList(['Computer Repair', 'Gaming PC Build']);
+        setServicesList([]);
       }
 
       const initialShopDetails = settings.shopAiDetails || '';
@@ -84,23 +87,21 @@ export function ReviewRepliesTab({
         let sanitized = settings.languagePreferences.slice(0, 2).map((l) => ({
           ...l,
           name: l.name.replace(/\s*\([^)]*\)/g, '').trim(),
+          percentage: Number(l.percentage) || 0,
         }));
-        if (!sanitized.some((l) => l.code === 'en' || l.name.toLowerCase() === 'english')) {
-          sanitized = [{ code: 'en', name: 'English', percentage: 50 }, ...sanitized].slice(0, 2);
-        }
         if (sanitized.length === 1) {
           sanitized[0].percentage = 100;
         } else if (sanitized.length === 2) {
-          const sum = (Number(sanitized[0].percentage) || 0) + (Number(sanitized[1].percentage) || 0);
+          const sum = sanitized[0].percentage + sanitized[1].percentage;
           if (sum !== 100) {
-            sanitized[1].percentage = 100 - (Number(sanitized[0].percentage) || 50);
+            sanitized[1].percentage = 100 - sanitized[0].percentage;
           }
         }
         setLanguages(sanitized);
       } else {
         setLanguages([
-          { code: 'en', name: 'English', percentage: 60 },
-          { code: 'hi', name: 'Hindi', percentage: 40 },
+          { code: 'en', name: 'English', percentage: 70 },
+          { code: 'hi', name: 'Hindi', percentage: 30 },
         ]);
       }
     }
@@ -115,20 +116,49 @@ export function ReviewRepliesTab({
     autoResizeTextarea(styleRulesRef.current);
   }, [reviewStyleAndRules]);
 
-  // Service Management (Direct Type & Add, no quick suggestions)
-  const handleAddService = () => {
+  // Service Management (Direct Type & Add, auto-saves immediately)
+  const handleAddService = async () => {
     const s = newServiceInput.trim();
     if (!s) return;
     if (servicesList.some((existing) => existing.toLowerCase() === s.toLowerCase())) {
       showError(`"${s}" is already in your services list.`);
       return;
     }
-    setServicesList((prev) => [...prev, s]);
+    const updated = [...servicesList, s];
+    setServicesList(updated);
     setNewServiceInput('');
+    showSuccess(`Added "${s}" to services.`);
+
+    try {
+      const res = await api.updateBusinessSettings({
+        services: updated,
+        productsAndServices: updated.join(', '),
+      });
+      if (res.settings) {
+        onUpdateSettings(res.settings);
+      }
+    } catch (err) {
+      console.warn('Auto-save service notice:', err);
+    }
   };
 
-  const handleRemoveService = (indexToRemove: number) => {
-    setServicesList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  const handleRemoveService = async (indexToRemove: number) => {
+    const removedItem = servicesList[indexToRemove];
+    const updated = servicesList.filter((_, idx) => idx !== indexToRemove);
+    setServicesList(updated);
+    showSuccess(`Removed "${removedItem}".`);
+
+    try {
+      const res = await api.updateBusinessSettings({
+        services: updated,
+        productsAndServices: updated.join(', '),
+      });
+      if (res.settings) {
+        onUpdateSettings(res.settings);
+      }
+    } catch (err) {
+      console.warn('Auto-save remove service notice:', err);
+    }
   };
 
   // Save Settings

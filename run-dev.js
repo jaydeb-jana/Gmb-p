@@ -20,6 +20,7 @@ process.env.HOST = host;
 // Spawn tsx server.ts with environment variables
 const child = spawn('npx', ['tsx', 'server.ts'], {
   stdio: 'inherit',
+  shell: true,
   env: { ...process.env, PORT: port, HOST: host },
 });
 

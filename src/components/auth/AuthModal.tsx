@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  Crown,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useAuth } from '../../context/AuthContext';
@@ -397,6 +398,21 @@ export function AuthModal({ initialMode = 'login', onSuccess }: AuthModalProps) 
               </>
             )}
           </button>
+
+          {/* Quick Admin Credentials Helper Button */}
+          <div className="pt-2 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                setEmail('info@arventaventures.online');
+                setPassword('Jaydeb@123');
+              }}
+              className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#1a73e8] hover:text-[#1557b0] hover:underline cursor-pointer bg-[#e8f0fe] px-2.5 py-1 rounded-full border border-[#d2e3fc]"
+            >
+              <Crown className="w-3 h-3 text-[#fbbc04]" />
+              <span>Fill Super Admin Credentials</span>
+            </button>
+          </div>
 
           <div className="text-center pt-3 border-t border-[#dadce0] text-xs text-[#5f6368]">
             Don't have an account?{' '}

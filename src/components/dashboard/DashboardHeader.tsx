@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, LogOut, CheckCircle2 } from 'lucide-react';
+import { Menu, LogOut, ShieldCheck, Crown } from 'lucide-react';
 import { CustomerUser, GoogleBusinessAccount } from '../../types';
 import { DashboardTab } from './DashboardNav';
 
@@ -12,6 +12,8 @@ interface DashboardHeaderProps {
   onToggleSidebar: () => void;
   onLogout: () => void;
   onNavigateToSettings?: () => void;
+  onNavigateToHome?: () => void;
+  onNavigateToAdmin?: () => void;
 }
 
 const TAB_TITLES: Record<DashboardTab, string> = {
@@ -23,6 +25,7 @@ const TAB_TITLES: Record<DashboardTab, string> = {
   plans: 'Plans',
   contact: 'Contact',
   security: 'Data Security',
+  admin_panel: 'Admin Control Center',
 };
 
 export function DashboardHeader({
@@ -33,8 +36,11 @@ export function DashboardHeader({
   onToggleSidebar,
   onLogout,
   onNavigateToSettings,
+  onNavigateToHome,
+  onNavigateToAdmin,
 }: DashboardHeaderProps) {
   const currentTabName = TAB_TITLES[activeTab] || 'Dashboard';
+  const isSuperAdmin = user.role === 'admin' || user.email === 'info@arventaventures.online';
 
   return (
     <header className="bg-white border-b border-[#dadce0] sticky top-0 z-30 shadow-xs">
@@ -53,44 +59,58 @@ export function DashboardHeader({
               <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
 
-            {/* Google Business Profile 4-color canopy icon */}
-            <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white border border-[#dadce0] shadow-2xs shrink-0">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 10V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V10" stroke="#1A73E8" strokeWidth="2" strokeLinecap="round"/>
-                <path d="M2 7L4.5 4H19.5L22 7L20 10H4L2 7Z" fill="#1A73E8"/>
-                <path d="M7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 11.1046 3 10" stroke="#EA4335" strokeWidth="2"/>
-                <path d="M11 10C11 11.1046 10.1046 12 9 12C7.89543 12 7 11.1046 7 10" stroke="#FBBC04" strokeWidth="2"/>
-                <path d="M15 10C15 11.1046 14.1046 12 13 12C11.8954 12 11 11.1046 11 10" stroke="#34A853" strokeWidth="2"/>
-                <path d="M19 10C19 11.1046 18.1046 12 17 12C15.8954 12 15 11.1046 15 10" stroke="#1A73E8" strokeWidth="2"/>
-                <path d="M9 20V14H15V20" stroke="#1A73E8" strokeWidth="2"/>
-              </svg>
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <span className="font-semibold text-sm sm:text-base text-[#202124] tracking-tight truncate">
-                  Google Business Profile
-                </span>
-                <span className="hidden md:inline-flex text-[11px] font-medium text-[#1a73e8] bg-[#e8f0fe] px-2 py-0.5 rounded-full border border-[#d2e3fc] shrink-0">
-                  {currentTabName}
-                </span>
+            {/* Clickable Brand info to navigate home */}
+            <div
+              onClick={onNavigateToHome}
+              className={`flex items-center gap-2 sm:gap-3.5 min-w-0 ${
+                onNavigateToHome ? 'cursor-pointer group' : ''
+              }`}
+              title={onNavigateToHome ? 'Go to Home & Overview' : undefined}
+            >
+              {/* Google Business Profile 4-color canopy icon */}
+              <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white border border-[#dadce0] shadow-2xs shrink-0 group-hover:border-[#1a73e8] transition-colors">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 10V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V10" stroke="#1A73E8" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M2 7L4.5 4H19.5L22 7L20 10H4L2 7Z" fill="#1A73E8"/>
+                  <path d="M7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 10" stroke="#EA4335" strokeWidth="2"/>
+                  <path d="M11 10C11 11.1046 10.1046 12 9 12C7.89543 12 7 10" stroke="#FBBC04" strokeWidth="2"/>
+                  <path d="M15 10C15 11.1046 14.1046 12 13 12C11.8954 12 11 10" stroke="#34A853" strokeWidth="2"/>
+                  <path d="M19 10C19 11.1046 18.1046 12 17 12C15.8954 12 15 10" stroke="#1A73E8" strokeWidth="2"/>
+                  <path d="M9 20V14H15V20" stroke="#1A73E8" strokeWidth="2"/>
+                </svg>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#5f6368] truncate max-w-[140px] xs:max-w-[190px] sm:max-w-xs md:max-w-md">
-                {businessName || 'Review Automation & Replies'}
-              </p>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <span className="font-semibold text-sm sm:text-base text-[#202124] group-hover:text-[#1a73e8] transition-colors tracking-tight truncate">
+                    Google Business Profile
+                  </span>
+                  <span className="hidden md:inline-flex text-[11px] font-medium text-[#1a73e8] bg-[#e8f0fe] px-2 py-0.5 rounded-full border border-[#d2e3fc] shrink-0">
+                    {currentTabName}
+                  </span>
+                </div>
+                <p className="text-[11px] sm:text-xs text-[#5f6368] truncate max-w-[140px] xs:max-w-[190px] sm:max-w-xs md:max-w-md">
+                  {businessName || 'Review Automation & Replies'}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* Right: Status Pill & Account Menu */}
+          {/* Right: User Profile Pill & Account Menu */}
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {onNavigateToSettings && (
+            {/* Super Admin Quick Access Button */}
+            {isSuperAdmin && onNavigateToAdmin && (
               <button
                 type="button"
-                onClick={onNavigateToSettings}
-                className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium transition-colors bg-[#E6F4EA] border-[#CEEAD6] text-[#137333] hover:bg-[#CEEAD6] cursor-pointer"
+                onClick={onNavigateToAdmin}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer ${
+                  activeTab === 'admin_panel'
+                    ? 'bg-[#1a73e8] text-white shadow-xs'
+                    : 'bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc] hover:bg-[#d2e3fc]'
+                }`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#1E8E3E]" />
-                <span>Review Link Configured</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-[#fbbc04]" />
+                <span className="hidden sm:inline">Admin Panel</span>
               </button>
             )}
 

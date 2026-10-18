@@ -44,6 +44,96 @@ async function loadImg(src: string): Promise<HTMLImageElement | null> {
 }
 
 /**
+ * Standardized High-Res Circular Logo Drawer:
+ * Guarantees every canvas export has an authentic circular logo or initial avatar badge.
+ */
+function drawCircularLogo(
+  ctx: CanvasRenderingContext2D,
+  logo: HTMLImageElement | null,
+  bizName: string,
+  cx: number,
+  cy: number,
+  size = 140,
+  borderColor = '#dadce0',
+  bgColor = '#ffffff',
+  textColor = '#1a73e8'
+) {
+  ctx.save();
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+  ctx.shadowBlur = 12;
+  ctx.shadowOffsetY = 4;
+  ctx.fillStyle = bgColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.shadowColor = 'transparent';
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  if (logo) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, size / 2 - 6, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(logo, cx - size / 2 + 6, cy - size / 2 + 6, size - 12, size - 12);
+    ctx.restore();
+  } else {
+    const initial = bizName ? bizName.trim().charAt(0).toUpperCase() : 'G';
+    ctx.fillStyle = textColor;
+    ctx.font = `bold ${Math.round(size * 0.45)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(initial, cx, cy);
+  }
+  ctx.restore();
+}
+
+/**
+ * Standardized 5-Star Rating Pill Drawer:
+ * Guarantees every canvas export has 5 stars + 5.0 Rating badge.
+ */
+function drawRatingPill(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  y: number,
+  pillW = 420,
+  pillH = 70,
+  starColor = '#fbbc04',
+  textColor = '#b06000',
+  bgColor = '#fef7e0',
+  borderColor = '#feefc3',
+  label = '5.0 Rating'
+) {
+  ctx.save();
+  const x = cx - pillW / 2;
+  ctx.fillStyle = bgColor;
+  ctx.strokeStyle = borderColor;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.roundRect(x, y, pillW, pillH, pillH / 2);
+  ctx.fill();
+  ctx.stroke();
+
+  const starSize = 36;
+  const starGap = 10;
+  let starX = x + 26;
+  ctx.fillStyle = starColor;
+  for (let i = 0; i < 5; i++) {
+    drawStar(ctx, starX + starSize / 2, y + pillH / 2, 5, starSize / 2, starSize / 4);
+    starX += starSize + starGap;
+  }
+
+  ctx.fillStyle = textColor;
+  ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, starX + 10, y + pillH / 2);
+  ctx.restore();
+}
+
+/**
  * Draws the high-res QR code and explicitly stamps the Google center logo with protective rounded shield
  */
 async function drawQrWithCenterLogo(
@@ -67,7 +157,6 @@ async function drawQrWithCenterLogo(
   if (centerLogoImg) {
     const cx = qrX + qrSize / 2;
     const cy = qrY + qrSize / 2;
-    // Keep badgeSize identical while enlarging the logo inside to fill the container
     const badgeSize = Math.round(qrSize * 0.22);
     const radius = Math.round(badgeSize * 0.20);
     const padding = Math.round(badgeSize * 0.04);
@@ -122,7 +211,35 @@ function drawGoogleWordmark(
 }
 
 /**
- * High-Resolution (1200 x 1800 px) Canvas Generator supporting 10 distinct layouts
+ * Helper to draw verified checkmark badge beside business name
+ */
+function drawVerifiedBadge(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius = 16,
+  bgColor = '#1a73e8'
+) {
+  ctx.save();
+  ctx.fillStyle = bgColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 3.5;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  ctx.moveTo(cx - radius * 0.45, cy);
+  ctx.lineTo(cx - radius * 0.1, cy + radius * 0.35);
+  ctx.lineTo(cx + radius * 0.45, cy - radius * 0.35);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/**
+ * Standardized High-Resolution (1200 x 1800 px) Canvas Generator for All 16 Commercial Stand Layouts
  */
 export async function renderStandToCanvas(
   canvas: HTMLCanvasElement,
@@ -142,13 +259,12 @@ export async function renderStandToCanvas(
   const logo = settings.businessLogo ? await loadImg(settings.businessLogo) : null;
 
   // -------------------------------------------------------------
-  // 1. OFFICIAL GOOGLE CANOPY & CARD (AUTHENTIC 5-STAR GOOGLE STAND)
+  // 1. OFFICIAL GOOGLE CANOPY & CARD
   // -------------------------------------------------------------
   if (template.layoutType === 'official-google') {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Outer border with rounded look
     ctx.strokeStyle = '#dadce0';
     ctx.lineWidth = 10;
     ctx.strokeRect(36, 36, width - 72, height - 72);
@@ -174,7 +290,6 @@ export async function renderStandToCanvas(
     ctx.lineWidth = 3;
     ctx.stroke();
 
-    // Draw "Review us on " and multi-color "Google"
     ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const prefix = 'Review us on ';
     const prefixW = ctx.measureText(prefix).width;
@@ -187,79 +302,31 @@ export async function renderStandToCanvas(
     ctx.fillText(prefix, startX, y + 50);
     drawGoogleWordmark(ctx, startX + prefixW, y + 50, 36);
 
-    y += 125;
+    y += 155;
 
-    // Logo (if available)
-    if (logo) {
-      const logoSize = 130;
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#dadce0';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.roundRect(width / 2 - logoSize / 2, y, logoSize, logoSize, 22);
-      ctx.fill();
-      ctx.stroke();
-      ctx.drawImage(logo, width / 2 - logoSize / 2 + 10, y + 10, logoSize - 20, logoSize - 20);
-      y += logoSize + 25;
-    }
+    // Circular Logo Avatar
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#dadce0', '#ffffff', '#1a73e8');
+    y += 105;
 
-    // Business Name with Blue Verified Badge
+    // Business Name + Blue Verified Badge
     ctx.fillStyle = '#202124';
     ctx.font = 'bold 54px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(bizName, width / 2, y);
 
-    // Verified Blue Circle Badge beside or below
-    y += 45;
-    ctx.fillStyle = '#1a73e8';
-    ctx.beginPath();
-    ctx.arc(width / 2 - 130, y - 6, 14, 0, Math.PI * 2);
-    ctx.fill();
-    // Checkmark
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(width / 2 - 136, y - 6);
-    ctx.lineTo(width / 2 - 131, y - 1);
-    ctx.lineTo(width / 2 - 124, y - 10);
-    ctx.stroke();
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#1a73e8');
 
+    y += 42;
     ctx.fillStyle = '#5f6368';
     ctx.font = '500 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('Verified on Google Maps', width / 2 - 105, y);
-    ctx.textAlign = 'center';
+    ctx.fillText('Verified on Google Maps', width / 2, y);
 
-    y += 55;
+    y += 45;
 
     // 5-Star Rating Pill (Google Yellow / Gold)
-    const ratingPillW = 420;
-    const ratingPillH = 70;
-    ctx.fillStyle = '#fef7e0';
-    ctx.strokeStyle = '#feefc3';
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.roundRect((width - ratingPillW) / 2, y, ratingPillW, ratingPillH, 35);
-    ctx.fill();
-    ctx.stroke();
+    drawRatingPill(ctx, width / 2, y, 430, 72, '#fbbc04', '#b06000', '#fef7e0', '#feefc3', '5.0 Rating');
 
-    // 5 Gold Stars
-    const starSize = 36;
-    const starGap = 10;
-    let starStartX = (width - ratingPillW) / 2 + 30;
-    ctx.fillStyle = '#fbbc04';
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, starStartX + starSize / 2, y + ratingPillH / 2, 5, starSize / 2, starSize / 4);
-      starStartX += starSize + starGap;
-    }
-    // "5.0 Rating"
-    ctx.fillStyle = '#b06000';
-    ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('5.0 Rating', starStartX + 12, y + 44);
-    ctx.textAlign = 'center';
-
-    y += 105;
+    y += 115;
 
     // Invitation text
     ctx.fillStyle = '#202124';
@@ -288,50 +355,41 @@ export async function renderStandToCanvas(
     ctx.strokeStyle = '#1a73e8';
     ctx.lineWidth = 6;
     ctx.lineCap = 'round';
-    // Top-Left
     ctx.beginPath();
     ctx.moveTo(qrX - 10, y + bracketSize - 10);
     ctx.lineTo(qrX - 10, y - 10);
     ctx.lineTo(qrX + bracketSize - 10, y - 10);
-    ctx.stroke();
-    // Top-Right
-    ctx.beginPath();
-    ctx.moveTo(qrX + qrBoxSize - bracketSize + 10, y - 10);
+    ctx.moveTo(qrX + qrBoxSize + 10 - bracketSize, y - 10);
     ctx.lineTo(qrX + qrBoxSize + 10, y - 10);
     ctx.lineTo(qrX + qrBoxSize + 10, y + bracketSize - 10);
-    ctx.stroke();
-    // Bottom-Left
-    ctx.beginPath();
-    ctx.moveTo(qrX - 10, y + qrBoxSize - bracketSize + 10);
+    ctx.moveTo(qrX - 10, y + qrBoxSize + 10 - bracketSize);
     ctx.lineTo(qrX - 10, y + qrBoxSize + 10);
     ctx.lineTo(qrX + bracketSize - 10, y + qrBoxSize + 10);
-    ctx.stroke();
-    // Bottom-Right
-    ctx.beginPath();
-    ctx.moveTo(qrX + qrBoxSize - bracketSize + 10, y + qrBoxSize + 10);
+    ctx.moveTo(qrX + qrBoxSize + 10 - bracketSize, y + qrBoxSize + 10);
     ctx.lineTo(qrX + qrBoxSize + 10, y + qrBoxSize + 10);
-    ctx.lineTo(qrX + qrBoxSize + 10, y + qrBoxSize - bracketSize + 10);
+    ctx.lineTo(qrX + qrBoxSize + 10, y + qrBoxSize + 10 - bracketSize);
     ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qrX, y, qrBoxSize);
+
     y += qrBoxSize + 60;
 
-    // Instruction Pill
-    const ctaW = 540;
-    const ctaH = 64;
+    // Bottom Scan CTA Pill
+    const ctaPillW = 540;
+    const ctaPillH = 64;
     ctx.fillStyle = '#f1f3f4';
     ctx.beginPath();
-    ctx.roundRect((width - ctaW) / 2, y, ctaW, ctaH, 32);
+    ctx.roundRect((width - ctaPillW) / 2, y, ctaPillW, ctaPillH, 32);
     ctx.fill();
 
-    ctx.fillStyle = '#202124';
+    ctx.fillStyle = '#3c4043';
     ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('Point phone camera to review', width / 2, y + 42);
-    y += 95;
+    ctx.fillText('📱  Point phone camera to review', width / 2, y + 42);
 
+    y += 65;
     ctx.fillStyle = '#5f6368';
-    ctx.font = '24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('Instant AI review drafts in 10 seconds • Direct to Google Maps', width / 2, y);
+    ctx.font = '500 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Quick AI review drafts in 10 seconds • Direct Google Maps', width / 2, y);
 
     // Google 4-Color Bottom Stripe
     ctx.fillStyle = '#4285f4'; ctx.fillRect(36, height - 36 - 20, segW, 20);
@@ -346,23 +404,19 @@ export async function renderStandToCanvas(
   // 2. MODERN SPLIT-HERO PODIUM
   // -------------------------------------------------------------
   if (template.layoutType === 'split-hero') {
-    // 38% Dark Header
-    const splitY = 660;
+    const splitY = 740;
     ctx.fillStyle = '#0b1120';
     ctx.fillRect(0, 0, width, splitY);
 
-    // 62% Crisp White Base
     ctx.fillStyle = '#f8fafc';
     ctx.fillRect(0, splitY, width, height - splitY);
 
-    // Border Frame
     ctx.strokeStyle = '#334155';
     ctx.lineWidth = 8;
     ctx.strokeRect(36, 36, width - 72, height - 72);
 
-    // Top Neon Pill Badge
-    let y = 120;
-    const pillW = 500;
+    let y = 130;
+    const pillW = 520;
     ctx.fillStyle = 'rgba(6, 182, 212, 0.15)';
     ctx.strokeStyle = '#06b6d4';
     ctx.lineWidth = 3;
@@ -374,29 +428,24 @@ export async function renderStandToCanvas(
     ctx.fillStyle = '#22d3ee';
     ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('AI POWERED REVIEW PORTAL', width / 2, y + 40);
-    y += 110;
+    ctx.fillText('⚡ AI POWERED REVIEW PORTAL', width / 2, y + 40);
 
-    // Business Name on Dark
+    y += 145;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#06b6d4', '#0f172a', '#22d3ee');
+
+    y += 105;
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 60px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText(bizName, width / 2, y);
-    y += 65;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#06b6d4');
 
-    // 5 Glowing Stars
-    ctx.fillStyle = '#38bdf8';
-    const starSize = 42;
-    const totalStarsW = 5 * starSize + 4 * 16;
-    let starX = (width - totalStarsW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, starX + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      starX += starSize + 16;
-    }
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#38bdf8', '#38bdf8', 'rgba(15, 23, 42, 0.9)', '#06b6d4', '5.0 Rating');
 
-    // Elevated QR Pedestal on Split Boundary
-    const qrBoxSize = 720;
+    // Pedestal QR
+    const qrBoxSize = 650;
     const qrX = (width - qrBoxSize) / 2;
-    const qrPedestalY = splitY - 140;
+    const qrPedestalY = splitY - 100;
 
     ctx.save();
     ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
@@ -404,7 +453,7 @@ export async function renderStandToCanvas(
     ctx.shadowOffsetY = 15;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
-    ctx.roundRect(qrX - 30, qrPedestalY - 30, qrBoxSize + 60, qrBoxSize + 60, 40);
+    ctx.roundRect(qrX - 25, qrPedestalY - 25, qrBoxSize + 50, qrBoxSize + 50, 36);
     ctx.fill();
     ctx.strokeStyle = '#06b6d4';
     ctx.lineWidth = 6;
@@ -413,15 +462,14 @@ export async function renderStandToCanvas(
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qrX, qrPedestalY, qrBoxSize);
 
-    // Subtitle on Base
-    y = qrPedestalY + qrBoxSize + 90;
+    y = qrPedestalY + qrBoxSize + 85;
     ctx.fillStyle = '#0f172a';
     ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText('Point Camera to Review Us', width / 2, y);
-    y += 55;
+    y += 50;
 
     ctx.fillStyle = '#64748b';
-    ctx.font = '32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText('Instant AI Review Assistance • Verified Google Maps', width / 2, y);
     return;
   }
@@ -433,7 +481,6 @@ export async function renderStandToCanvas(
     ctx.fillStyle = '#0a1128';
     ctx.fillRect(0, 0, width, height);
 
-    // Outer double gold border
     ctx.strokeStyle = '#d97706';
     ctx.lineWidth = 14;
     ctx.strokeRect(40, 40, width - 80, height - 80);
@@ -442,67 +489,51 @@ export async function renderStandToCanvas(
     ctx.lineWidth = 4;
     ctx.strokeRect(60, 60, width - 120, height - 120);
 
-    let y = 160;
-    // Gold Ribbon Header
+    let y = 145;
     ctx.fillStyle = '#fbbf24';
-    ctx.font = 'bold 30px Georgia, serif';
+    ctx.font = 'bold 28px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('— EXCELLENCE & REPUTATION —', width / 2, y);
-    y += 90;
+    ctx.fillText('⚜  EXCELLENCE & REPUTATION  ⚜', width / 2, y);
 
-    // Logo / Crest
-    if (logo) {
-      const size = 130;
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#d97706';
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.arc(width / 2, y + size / 2, size / 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.drawImage(logo, width / 2 - size / 2 + 15, y + 15, size - 30, size - 30);
-      y += size + 35;
-    }
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#d97706', '#ffffff', '#b45309');
 
-    // Business Name in Serif
+    y += 105;
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 56px Georgia, serif';
     ctx.fillText(bizName, width / 2, y);
-    y += 65;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#f59e0b');
 
-    // Gold Stars
-    ctx.fillStyle = '#f59e0b';
-    const starSize = 44;
-    const totalW = 5 * starSize + 4 * 16;
-    let sx = (width - totalW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      sx += starSize + 16;
-    }
-    y += 85;
+    y += 42;
+    ctx.fillStyle = '#fbbf24';
+    ctx.font = '24px Georgia, serif';
+    ctx.fillText('Prestigious Google Rated Destination', width / 2, y);
 
-    // Luxury QR Frame
-    const qrSize = 680;
+    y += 45;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#fde68a', '#1e293b', '#d97706', '5.0 Rating');
+
+    y += 125;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#d97706';
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.roundRect(qx - 30, y - 30, qrSize + 60, qrSize + 60, 24);
+    ctx.roundRect(qx - 20, y - 20, qrSize + 40, qrSize + 40, 28);
     ctx.fill();
     ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-    y += qrSize + 90;
+    y += qrSize + 85;
 
     ctx.fillStyle = '#fde68a';
-    ctx.font = 'italic bold 40px Georgia, serif';
+    ctx.font = 'italic bold 38px Georgia, serif';
     ctx.fillText('Your Experience is Our Greatest Honor', width / 2, y);
-    y += 50;
+    y += 45;
 
     ctx.fillStyle = '#cbd5e1';
-    ctx.font = '28px Georgia, serif';
-    ctx.fillText('Scan with smartphone • Draft review with AI in 10s', width / 2, y);
+    ctx.font = '26px Georgia, serif';
+    ctx.fillText('Scan with smartphone • 10s AI Feedback • Google Maps', width / 2, y);
     return;
   }
 
@@ -513,7 +544,6 @@ export async function renderStandToCanvas(
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Thick Solid Black Border with Inner Hairline
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 16;
     ctx.strokeRect(40, 40, width - 80, height - 80);
@@ -522,60 +552,55 @@ export async function renderStandToCanvas(
     ctx.lineWidth = 2;
     ctx.strokeRect(65, 65, width - 130, height - 130);
 
-    let y = 170;
+    let y = 145;
     ctx.fillStyle = '#52525b';
     ctx.font = 'bold 26px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('[ RATE YOUR EXPERIENCE // DIRECT PORTAL ]', width / 2, y);
-    y += 90;
+    ctx.fillText('[ 5.0 GOOGLE RATED STORE // OFFICIAL PORTAL ]', width / 2, y);
 
-    // Business Name
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#000000', '#f4f4f5', '#000000');
+
+    y += 105;
     ctx.fillStyle = '#000000';
-    ctx.font = '900 68px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = '900 62px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText(bizName.toUpperCase(), width / 2, y);
-    y += 70;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName.toUpperCase()).width / 2 + 28, y - 18, 16, '#000000');
 
-    // Solid Black Geometric Stars
-    ctx.fillStyle = '#000000';
-    const starSize = 46;
-    const totalW = 5 * starSize + 4 * 20;
-    let sx = (width - totalW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      sx += starSize + 20;
-    }
-    y += 90;
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#000000', '#000000', '#f4f4f5', '#000000', '5.0 Rating');
 
-    // Stark Square QR Box with 4 Corner L-Brackets
-    const qrSize = 700;
+    y += 125;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 6;
     ctx.fillRect(qx - 20, y - 20, qrSize + 40, qrSize + 40);
+    ctx.strokeRect(qx - 20, y - 20, qrSize + 40, qrSize + 40);
 
-    // Corner L-brackets
+    // L-brackets
+    const bLen = 40;
     ctx.strokeStyle = '#000000';
     ctx.lineWidth = 8;
-    const bLen = 50;
-    // Top-left
-    ctx.beginPath(); ctx.moveTo(qx - 40, y - 40 + bLen); ctx.lineTo(qx - 40, y - 40); ctx.lineTo(qx - 40 + bLen, y - 40); ctx.stroke();
-    // Top-right
-    ctx.beginPath(); ctx.moveTo(qx + qrSize + 40 - bLen, y - 40); ctx.lineTo(qx + qrSize + 40, y - 40); ctx.lineTo(qx + qrSize + 40, y - 40 + bLen); ctx.stroke();
-    // Bottom-left
-    ctx.beginPath(); ctx.moveTo(qx - 40, y + qrSize + 40 - bLen); ctx.lineTo(qx - 40, y + qrSize + 40); ctx.lineTo(qx - 40 + bLen, y + qrSize + 40); ctx.stroke();
-    // Bottom-right
-    ctx.beginPath(); ctx.moveTo(qx + qrSize + 40 - bLen, y + qrSize + 40); ctx.lineTo(qx + qrSize + 40, y + qrSize + 40); ctx.lineTo(qx + qrSize + 40, y + qrSize + 40 - bLen); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(qx - 35, y - 35 + bLen); ctx.lineTo(qx - 35, y - 35); ctx.lineTo(qx - 35 + bLen, y - 35);
+    ctx.moveTo(qx + qrSize + 35 - bLen, y - 35); ctx.lineTo(qx + qrSize + 35, y - 35); ctx.lineTo(qx + qrSize + 35, y - 35 + bLen);
+    ctx.moveTo(qx - 35, y + qrSize + 35 - bLen); ctx.lineTo(qx - 35, y + qrSize + 35); ctx.lineTo(qx - 35 + bLen, y + qrSize + 35);
+    ctx.moveTo(qx + qrSize + 35 - bLen, y + qrSize + 35); ctx.lineTo(qx + qrSize + 35, y + qrSize + 35); ctx.lineTo(qx + qrSize + 35, y + qrSize + 35 - bLen);
+    ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-    y += qrSize + 95;
+    y += qrSize + 85;
 
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText('INSTANT MOBILE REVIEW', width / 2, y);
     y += 45;
 
     ctx.fillStyle = '#71717a';
-    ctx.font = '28px "Courier New", monospace';
-    ctx.fillText('Fast AI Review Assistant • Google Maps', width / 2, y);
+    ctx.font = '26px "Courier New", monospace';
+    ctx.fillText('Fast AI Review Assistant • Direct Google Maps', width / 2, y);
     return;
   }
 
@@ -590,8 +615,7 @@ export async function renderStandToCanvas(
     ctx.lineWidth = 10;
     ctx.strokeRect(36, 36, width - 72, height - 72);
 
-    let y = 160;
-    // Pill Badge
+    let y = 145;
     const pillW = 560;
     ctx.fillStyle = '#dcfce7';
     ctx.strokeStyle = '#bbf7d0';
@@ -602,50 +626,44 @@ export async function renderStandToCanvas(
     ctx.stroke();
 
     ctx.fillStyle = '#15803d';
-    ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('VERIFIED CLIENT CARE & WELLNESS', width / 2, y + 42);
-    y += 120;
+    ctx.fillText('🌿  VERIFIED CLIENT CARE & WELLNESS  🌿', width / 2, y + 42);
 
-    // Business Name
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#86efac', '#ffffff', '#15803d');
+
+    y += 105;
     ctx.fillStyle = '#064e3b';
-    ctx.font = 'bold 58px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText(bizName, width / 2, y);
-    y += 65;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#15803d');
 
-    // Emerald Stars
-    ctx.fillStyle = '#10b981';
-    const starSize = 44;
-    const totalW = 5 * starSize + 4 * 16;
-    let sx = (width - totalW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      sx += starSize + 16;
-    }
-    y += 85;
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#10b981', '#047857', '#ffffff', '#bbf7d0', '5.0 Rating');
 
-    // Pebble Smooth Rounded QR Container
-    const qrSize = 680;
+    y += 125;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#86efac';
     ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.roundRect(qx - 30, y - 30, qrSize + 60, qrSize + 60, 50);
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 40);
     ctx.fill();
     ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-    y += qrSize + 90;
+    y += qrSize + 85;
 
     ctx.fillStyle = '#064e3b';
-    ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText('Share Your Experience With Our Community', width / 2, y);
-    y += 50;
+    y += 45;
 
     ctx.fillStyle = '#047857';
-    ctx.font = '30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('Scan with smartphone camera to review in 10 seconds', width / 2, y);
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Scan with camera to review in 10 seconds • Google Maps', width / 2, y);
     return;
   }
 
@@ -656,7 +674,6 @@ export async function renderStandToCanvas(
     ctx.fillStyle = '#fefce8';
     ctx.fillRect(0, 0, width, height);
 
-    // Dashed Stitched Border
     ctx.save();
     ctx.strokeStyle = '#ca8a04';
     ctx.lineWidth = 8;
@@ -664,48 +681,46 @@ export async function renderStandToCanvas(
     ctx.strokeRect(45, 45, width - 90, height - 90);
     ctx.restore();
 
-    let y = 170;
-    // Circular Retro Badge Banner
+    let y = 145;
     ctx.fillStyle = '#ca8a04';
-    ctx.font = 'bold 32px Georgia, serif';
+    ctx.font = 'bold 30px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('★ ARTISAN CRAFT & LOCAL SERVICE ★', width / 2, y);
-    y += 90;
+    ctx.fillText('☕  ARTISAN ROAST & LOCAL KITCHEN  ☕', width / 2, y);
 
-    // Business Name
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#ca8a04', '#ffffff', '#854d0e');
+
+    y += 105;
     ctx.fillStyle = '#422006';
-    ctx.font = 'bold 60px Georgia, serif';
+    ctx.font = 'bold 56px Georgia, serif';
     ctx.fillText(bizName, width / 2, y);
-    y += 65;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#ca8a04');
 
-    // Stars with dashes
-    ctx.fillStyle = '#ca8a04';
-    ctx.font = 'bold 40px Georgia, serif';
-    ctx.fillText('— ★ ★ ★ ★ ★ —', width / 2, y + 10);
-    y += 85;
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#ca8a04', '#713f12', '#fef08a', '#ca8a04', '5.0 Rating');
 
-    // QR Box
-    const qrSize = 680;
+    y += 125;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#ca8a04';
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 8;
     ctx.beginPath();
     ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 30);
     ctx.fill();
     ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-    y += qrSize + 90;
+    y += qrSize + 85;
 
     ctx.fillStyle = '#422006';
-    ctx.font = 'bold 44px Georgia, serif';
+    ctx.font = 'bold 42px Georgia, serif';
     ctx.fillText('Loved Your Visit? Review Us!', width / 2, y);
-    y += 50;
+    y += 45;
 
     ctx.fillStyle = '#713f12';
-    ctx.font = '30px Georgia, serif';
-    ctx.fillText('We appreciate your friendly local support • Google Reviews', width / 2, y);
+    ctx.font = '28px Georgia, serif';
+    ctx.fillText('We appreciate your friendly local support • Google Maps', width / 2, y);
     return;
   }
 
@@ -716,37 +731,30 @@ export async function renderStandToCanvas(
     ctx.fillStyle = '#070b14';
     ctx.fillRect(0, 0, width, height);
 
-    // Cyber Neon Border
     ctx.strokeStyle = '#06b6d4';
     ctx.lineWidth = 8;
     ctx.strokeRect(40, 40, width - 80, height - 80);
 
-    let y = 140;
+    let y = 145;
     ctx.fillStyle = '#22d3ee';
-    ctx.font = 'bold 28px "Courier New", monospace';
+    ctx.font = 'bold 26px "Courier New", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('/// SYSTEM READY // SCAN TO REVIEW', width / 2, y);
-    y += 100;
+    ctx.fillText('/// HUD ONLINE // GEMINI 3.8 AI SEQUENCE', width / 2, y);
 
-    // Business Name
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#06b6d4', '#0b1120', '#22d3ee');
+
+    y += 105;
     ctx.fillStyle = '#22d3ee';
-    ctx.font = 'bold 64px "Courier New", monospace';
+    ctx.font = 'bold 58px "Courier New", monospace';
     ctx.fillText(bizName, width / 2, y);
-    y += 65;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#06b6d4');
 
-    // Cyan Stars
-    ctx.fillStyle = '#06b6d4';
-    const starSize = 44;
-    const totalW = 5 * starSize + 4 * 16;
-    let sx = (width - totalW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      sx += starSize + 16;
-    }
-    y += 85;
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#06b6d4', '#22d3ee', '#082f49', '#06b6d4', '5.0 Rating');
 
-    // Neon Frame QR
-    const qrSize = 680;
+    y += 125;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#06b6d4';
@@ -757,16 +765,16 @@ export async function renderStandToCanvas(
     ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-    y += qrSize + 90;
+    y += qrSize + 85;
 
     ctx.fillStyle = '#22d3ee';
-    ctx.font = 'bold 44px "Courier New", monospace';
+    ctx.font = 'bold 40px "Courier New", monospace';
     ctx.fillText('POINT CAMERA TO REVIEW', width / 2, y);
-    y += 50;
+    y += 45;
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '28px "Courier New", monospace';
-    ctx.fillText('GEMINI 3.8 AI REVIEW GENERATOR // GOOGLE MAPS', width / 2, y);
+    ctx.font = '26px "Courier New", monospace';
+    ctx.fillText('DIRECT GOOGLE MAPS TRANSMISSION // 10 SECONDS', width / 2, y);
     return;
   }
 
@@ -781,111 +789,93 @@ export async function renderStandToCanvas(
     ctx.lineWidth = 10;
     ctx.strokeRect(40, 40, width - 80, height - 80);
 
-    let y = 160;
+    let y = 145;
     ctx.fillStyle = '#db2777';
-    ctx.font = 'bold 32px Georgia, serif';
+    ctx.font = 'bold 28px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✨ LOVE YOUR EXPERIENCE? ✨', width / 2, y);
-    y += 90;
+    ctx.fillText('✨  LOVE YOUR EXPERIENCE?  ✨', width / 2, y);
 
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#f472b6', '#ffffff', '#db2777');
+
+    y += 105;
     ctx.fillStyle = '#831843';
-    ctx.font = 'bold 58px Georgia, serif';
+    ctx.font = 'bold 56px Georgia, serif';
     ctx.fillText(bizName, width / 2, y);
-    y += 65;
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#db2777');
 
-    // Stars
-    ctx.fillStyle = '#f59e0b';
-    const starSize = 44;
-    const totalW = 5 * starSize + 4 * 16;
-    let sx = (width - totalW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      sx += starSize + 16;
-    }
-    y += 85;
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#831843', '#ffffff', '#fbcfe8', '5.0 Rating');
 
-    // Pill Rounded QR Box
-    const qrSize = 680;
+    y += 125;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#f472b6';
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 40);
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 36);
     ctx.fill();
     ctx.stroke();
 
     await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-    y += qrSize + 90;
+    y += qrSize + 85;
 
     ctx.fillStyle = '#831843';
-    ctx.font = 'bold 44px Georgia, serif';
+    ctx.font = 'bold 40px Georgia, serif';
     ctx.fillText('Scan to Share Your Glow', width / 2, y);
-    y += 50;
+    y += 45;
 
     ctx.fillStyle = '#db2777';
-    ctx.font = '30px Georgia, serif';
+    ctx.font = '28px Georgia, serif';
     ctx.fillText('Review us on Google Maps in 10 seconds with AI', width / 2, y);
     return;
   }
 
   // -------------------------------------------------------------
-  // 9. DYNAMIC SUNSET BURST (ANGLED HEADER)
+  // 9. DYNAMIC SUNSET BURST
   // -------------------------------------------------------------
   if (template.layoutType === 'dynamic-burst') {
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, width, height);
 
-    // Diagonal angled header banner
-    const grad = ctx.createLinearGradient(0, 0, width, 400);
+    const grad = ctx.createLinearGradient(0, 0, width, 480);
     grad.addColorStop(0, '#ea580c');
     grad.addColorStop(0.5, '#f59e0b');
     grad.addColorStop(1, '#ef4444');
     ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, width, 480);
 
+    let y = 100;
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+    const pillW = 540;
     ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(width, 0);
-    ctx.lineTo(width, 420);
-    ctx.lineTo(0, 480);
-    ctx.closePath();
-    ctx.fill();
-
-    let y = 140;
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-    const pillW = 500;
-    ctx.beginPath();
-    ctx.roundRect((width - pillW) / 2, y, pillW, 60, 30);
+    ctx.roundRect((width - pillW) / 2, y, pillW, 58, 29);
     ctx.fill();
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('🔥 AWESOME EXPERIENCE? RATE US! 🔥', width / 2, y + 42);
-    y += 110;
+    ctx.fillText('🔥  5-STAR TOP EXPERIENCE  🔥', width / 2, y + 40);
 
+    y += 130;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#ffffff', '#ffffff', '#ea580c');
+
+    y += 105;
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 62px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText(bizName, width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#ffffff');
 
-    // On white section
-    y = 560;
-    ctx.fillStyle = '#f59e0b';
-    const starSize = 46;
-    const totalW = 5 * starSize + 4 * 16;
-    let sx = (width - totalW) / 2;
-    for (let i = 0; i < 5; i++) {
-      drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-      sx += starSize + 16;
-    }
-    y += 75;
+    y += 120;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#c2410c', '#fff7ed', '#fed7aa', '5.0 Rating');
 
-    // QR Box
-    const qrSize = 700;
+    y += 115;
+    const qrSize = 640;
     const qx = (width - qrSize) / 2;
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#ea580c';
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 8;
     ctx.beginPath();
     ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 30);
     ctx.fill();
@@ -895,78 +885,450 @@ export async function renderStandToCanvas(
     y += qrSize + 85;
 
     ctx.fillStyle = '#c2410c';
-    ctx.font = 'bold 46px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('Tap or Scan to Review', width / 2, y);
-    y += 50;
+    ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Tap or Scan Camera to Review', width / 2, y);
+    y += 45;
 
     ctx.fillStyle = '#7c2d12';
-    ctx.font = '30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('Draft your 5-star review in 10 seconds flat!', width / 2, y);
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Draft your 5-star review in 10 seconds flat! • Google Maps', width / 2, y);
     return;
   }
 
   // -------------------------------------------------------------
-  // 10. CORPORATE COBALT EXECUTIVE (VERTICAL STRIPE PLAQUE)
+  // 10. CORPORATE COBALT EXECUTIVE
   // -------------------------------------------------------------
-  ctx.fillStyle = '#ffffff';
+  if (template.layoutType === 'executive-navy') {
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#1e3a8a';
+    ctx.fillRect(0, 0, width, 24);
+
+    ctx.strokeStyle = '#1e3a8a';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(36, 44, width - 72, height - 80);
+
+    let y = 145;
+    const pillW = 560;
+    ctx.fillStyle = '#e0e7ff';
+    ctx.beginPath();
+    ctx.roundRect((width - pillW) / 2, y, pillW, 64, 32);
+    ctx.fill();
+
+    ctx.fillStyle = '#1e3a8a';
+    ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🛡️  OFFICIAL GOOGLE CLIENT VERIFIED', width / 2, y + 42);
+
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#1e3a8a', '#ffffff', '#1e3a8a');
+
+    y += 105;
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(bizName, width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#1e3a8a');
+
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#1e3a8a', '#e0e7ff', '#c7d2fe', '5.0 Rating');
+
+    y += 125;
+    const qrSize = 640;
+    const qx = (width - qrSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#1e3a8a';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 24);
+    ctx.fill();
+    ctx.stroke();
+
+    await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
+    y += qrSize + 85;
+
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Client Satisfaction Index • Verified Feedback', width / 2, y);
+    y += 45;
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Direct Submission to Google Maps • Secure & Fast', width / 2, y);
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // 11. DENTAL & MEDICAL PURE CLINIC
+  // -------------------------------------------------------------
+  if (template.layoutType === 'dental-clinic') {
+    ctx.fillStyle = '#f0fdfa';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(0, 0, width, 130);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✚  HEALTHCARE & PATIENT EXCELLENCE  ✚', width / 2, 80);
+
+    ctx.strokeStyle = '#bae6fd';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(36, 160, width - 72, height - 196);
+
+    let y = 230;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#0284c7', '#ffffff', '#0284c7');
+
+    y += 105;
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 56px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(bizName, width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#0284c7');
+
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#0284c7', '#e0f2fe', '#bae6fd', '5.0 Rating');
+
+    y += 115;
+    const qrSize = 640;
+    const qx = (width - qrSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#0284c7';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 32);
+    ctx.fill();
+    ctx.stroke();
+
+    await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
+    y += qrSize + 85;
+
+    ctx.fillStyle = '#0284c7';
+    ctx.font = 'bold 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Point Camera to Leave 5-Star Review', width / 2, y);
+    y += 45;
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Please share your consultation experience on Google Maps', width / 2, y);
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // 12. MOTORSPORT CARBON WEAVE (AUTOMOTIVE & GARAGE)
+  // -------------------------------------------------------------
+  if (template.layoutType === 'carbon-auto') {
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(0, 0, width, 24);
+    ctx.fillRect(0, height - 24, width, 24);
+
+    let y = 145;
+    const badgeW = 600;
+    ctx.fillStyle = '#450a0a';
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.roundRect((width - badgeW) / 2, y, badgeW, 64, 32);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#f87171';
+    ctx.font = 'bold 26px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🏎️  MOTORSPORT PRECISION SERVICE  🏎️', width / 2, y + 42);
+
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#dc2626', '#1e293b', '#ef4444');
+
+    y += 105;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 58px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(bizName.toUpperCase(), width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName.toUpperCase()).width / 2 + 28, y - 18, 16, '#dc2626');
+
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#f87171', '#450a0a', '#b91c1c', '5.0 Rating');
+
+    y += 125;
+    const qrSize = 640;
+    const qx = (width - qrSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(qx - 20, y - 20, qrSize + 40, qrSize + 40);
+
+    // Red calipers
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 8;
+    const cLen = 35;
+    ctx.beginPath();
+    ctx.moveTo(qx - 20, y - 20 + cLen); ctx.lineTo(qx - 20, y - 20); ctx.lineTo(qx - 20 + cLen, y - 20);
+    ctx.moveTo(qx + qrSize + 20 - cLen, y - 20); ctx.lineTo(qx + qrSize + 20, y - 20); ctx.lineTo(qx + qrSize + 20, y - 20 + cLen);
+    ctx.moveTo(qx - 20, y + qrSize + 20 - cLen); ctx.lineTo(qx - 20, y + qrSize + 20); ctx.lineTo(qx - 20 + cLen, y + qrSize + 20);
+    ctx.moveTo(qx + qrSize + 20 - cLen, y + qrSize + 20); ctx.lineTo(qx + qrSize + 20, y + qrSize + 20); ctx.lineTo(qx + qrSize + 20, y + qrSize + 20 - cLen);
+    ctx.stroke();
+
+    await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
+    y += qrSize + 85;
+
+    ctx.fillStyle = '#f87171';
+    ctx.font = 'bold 38px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('RATE OUR SPEED & SERVICE', width / 2, y);
+    y += 45;
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('⚡ 10-Second Quick Google Review', width / 2, y);
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // 13. AUTHENTIC ITALIAN TRATTORIA & PIZZERIA
+  // -------------------------------------------------------------
+  if (template.layoutType === 'pizzeria-rustic') {
+    ctx.fillStyle = '#fffbeb';
+    ctx.fillRect(0, 0, width, height);
+
+    const fW = width / 3;
+    ctx.fillStyle = '#15803d'; ctx.fillRect(0, 0, fW, 26);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(fW, 0, fW, 26);
+    ctx.fillStyle = '#b91c1c'; ctx.fillRect(fW * 2, 0, fW, 26);
+
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(36, 56, width - 72, height - 92);
+
+    let y = 145;
+    const badgeW = 560;
+    ctx.fillStyle = '#fef3c7';
+    ctx.strokeStyle = '#fde68a';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.roundRect((width - badgeW) / 2, y, badgeW, 64, 32);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#92400e';
+    ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('🍕  AUTENTICO GUSTO ITALIANO  🍕', width / 2, y + 42);
+
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#d97706', '#ffffff', '#b91c1c');
+
+    y += 105;
+    ctx.fillStyle = '#78350f';
+    ctx.font = 'bold 56px Georgia, serif';
+    ctx.fillText(bizName, width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#15803d');
+
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#d97706', '#92400e', '#fef3c7', '#fde68a', '5.0 Rating');
+
+    y += 125;
+    const qrSize = 640;
+    const qx = (width - qrSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#b91c1c';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 32);
+    ctx.fill();
+    ctx.stroke();
+
+    await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
+    y += qrSize + 85;
+
+    ctx.fillStyle = '#b91c1c';
+    ctx.font = 'bold 38px Georgia, serif';
+    ctx.fillText('Buon Appetito! Loved The Taste?', width / 2, y);
+    y += 45;
+
+    ctx.fillStyle = '#78350f';
+    ctx.font = 'italic 30px Georgia, serif';
+    ctx.fillText('Grazie Mille per la Visita! • Google Maps', width / 2, y);
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // 14. IRON VOLT ATHLETIC & GYM
+  // -------------------------------------------------------------
+  if (template.layoutType === 'fitness-volt') {
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#84cc16';
+    ctx.fillRect(0, 0, width, 120);
+
+    ctx.fillStyle = '#09090b';
+    ctx.font = '900 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('⚡ IRON PERFORMANCE FITNESS & GYM ⚡', width / 2, 75);
+
+    let y = 220;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#84cc16', '#18181b', '#84cc16');
+
+    y += 105;
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '900 60px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(bizName.toUpperCase(), width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName.toUpperCase()).width / 2 + 28, y - 18, 16, '#84cc16');
+
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#84cc16', '#84cc16', '#18181b', '#84cc16', '5.0 Rating');
+
+    y += 125;
+    const qrSize = 640;
+    const qx = (width - qrSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#84cc16';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 24);
+    ctx.fill();
+    ctx.stroke();
+
+    await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
+    y += qrSize + 85;
+
+    ctx.fillStyle = '#84cc16';
+    ctx.font = '900 40px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('CRUSHED YOUR WORKOUT TODAY?', width / 2, y);
+    y += 45;
+
+    ctx.fillStyle = '#a1a1aa';
+    ctx.font = '28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('💪 Point Phone Camera To Rate Instantly on Google', width / 2, y);
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // 15. PEARL & DIAMOND HAUTE JOAILLERIE
+  // -------------------------------------------------------------
+  if (template.layoutType === 'diamond-luxury') {
+    ctx.fillStyle = '#fafaf9';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(36, 36, width - 72, height - 72);
+    ctx.strokeStyle = '#fde68a';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(52, 52, width - 104, height - 104);
+
+    let y = 145;
+    const badgeW = 600;
+    ctx.fillStyle = '#fef3c7';
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect((width - badgeW) / 2, y, badgeW, 60, 30);
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.fillStyle = '#b45309';
+    ctx.font = 'bold 24px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('💎  HAUTE JOAILLERIE & DISTINCTION  💎', width / 2, y + 38);
+
+    y += 135;
+    drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#d97706', '#ffffff', '#b45309');
+
+    y += 105;
+    ctx.fillStyle = '#1c1917';
+    ctx.font = 'bold 56px Georgia, serif';
+    ctx.fillText(bizName, width / 2, y);
+    drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName).width / 2 + 28, y - 18, 16, '#d97706');
+
+    y += 42;
+    drawRatingPill(ctx, width / 2, y, 420, 70, '#d97706', '#b45309', '#ffffff', '#fde68a', '5.0 Rating');
+
+    y += 125;
+    const qrSize = 640;
+    const qx = (width - qrSize) / 2;
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 32);
+    ctx.fill();
+    ctx.stroke();
+
+    await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
+    y += qrSize + 85;
+
+    ctx.fillStyle = '#292524';
+    ctx.font = 'bold 36px Georgia, serif';
+    ctx.fillText('Thank You For Choosing Excellence', width / 2, y);
+    y += 45;
+
+    ctx.fillStyle = '#78716c';
+    ctx.font = '26px Georgia, serif';
+    ctx.fillText('Pure Client Distinction • Verified Google Maps', width / 2, y);
+    return;
+  }
+
+  // -------------------------------------------------------------
+  // 16. GENTLEMEN'S BARBER & LOUNGE
+  // -------------------------------------------------------------
+  ctx.fillStyle = '#1c1917';
   ctx.fillRect(0, 0, width, height);
 
-  // Left Vertical Navy Bar
-  ctx.fillStyle = '#1e3a8a';
-  ctx.fillRect(0, 0, 70, height);
+  ctx.fillStyle = '#dc2626';
+  ctx.fillRect(0, 0, width, 24);
 
-  ctx.strokeStyle = '#dadce0';
-  ctx.lineWidth = 6;
-  ctx.strokeRect(30, 30, width - 60, height - 60);
+  ctx.strokeStyle = '#b45309';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(36, 48, width - 72, height - 84);
 
-  let y = 170;
-  const pillW = 600;
-  ctx.fillStyle = '#e0e7ff';
+  let y = 145;
+  const badgeW = 620;
+  ctx.fillStyle = '#451a03';
+  ctx.strokeStyle = '#b45309';
+  ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.roundRect((width - pillW) / 2 + 35, y, pillW, 64, 16);
+  ctx.roundRect((width - badgeW) / 2, y, badgeW, 64, 32);
   ctx.fill();
+  ctx.stroke();
 
-  ctx.fillStyle = '#1e3a8a';
-  ctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillStyle = '#fde68a';
+  ctx.font = 'bold 28px Georgia, serif';
   ctx.textAlign = 'center';
-  ctx.fillText('CLIENT SATISFACTION INDEX', width / 2 + 35, y + 42);
-  y += 120;
+  ctx.fillText('✂  GENTLEMEN\'S GROOMING & SHAVE  ✂', width / 2, y + 42);
 
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 58px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText(bizName, width / 2 + 35, y);
-  y += 65;
+  y += 135;
+  drawCircularLogo(ctx, logo, bizName, width / 2, y, 140, '#d97706', '#292524', '#f59e0b');
 
-  ctx.fillStyle = '#f59e0b';
-  const starSize = 44;
-  const totalW = 5 * starSize + 4 * 16;
-  let sx = (width - totalW) / 2 + 35;
-  for (let i = 0; i < 5; i++) {
-    drawStar(ctx, sx + starSize / 2, y, 5, starSize / 2, starSize / 4);
-    sx += starSize + 16;
-  }
-  y += 85;
+  y += 105;
+  ctx.fillStyle = '#fef3c7';
+  ctx.font = 'bold 58px Georgia, serif';
+  ctx.fillText(bizName.toUpperCase(), width / 2, y);
+  drawVerifiedBadge(ctx, width / 2 + ctx.measureText(bizName.toUpperCase()).width / 2 + 28, y - 18, 16, '#f59e0b');
 
-  // QR Container
-  const qrSize = 680;
-  const qx = (width - qrSize) / 2 + 35;
+  y += 42;
+  drawRatingPill(ctx, width / 2, y, 420, 70, '#f59e0b', '#fde68a', '#292524', '#b45309', '5.0 Rating');
+
+  y += 125;
+  const qrSize = 640;
+  const qx = (width - qrSize) / 2;
   ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#1e3a8a';
+  ctx.strokeStyle = '#d97706';
   ctx.lineWidth = 10;
   ctx.beginPath();
-  ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 20);
+  ctx.roundRect(qx - 25, y - 25, qrSize + 50, qrSize + 50, 24);
   ctx.fill();
   ctx.stroke();
 
   await drawQrWithCenterLogo(ctx, qrDataUrl, qx, y, qrSize);
-  y += qrSize + 90;
+  y += qrSize + 85;
 
-  ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 42px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('Verified Client Feedback System', width / 2 + 35, y);
-  y += 50;
+  ctx.fillStyle = '#fde68a';
+  ctx.font = 'bold 38px Georgia, serif';
+  ctx.fillText('A Cut Above The Rest', width / 2, y);
+  y += 45;
 
-  ctx.fillStyle = '#64748b';
-  ctx.font = '30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-  ctx.fillText('Direct Submission to Google Maps • Secure & Fast', width / 2 + 35, y);
+  ctx.fillStyle = '#a8a29e';
+  ctx.font = '28px Georgia, serif';
+  ctx.fillText('Craftsmanship • Precision • Heritage • Google Maps', width / 2, y);
 }

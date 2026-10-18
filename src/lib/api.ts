@@ -4,6 +4,7 @@ import {
   BusinessSettings,
   GoogleBusinessAccount,
   CustomerReview,
+  PricingPlan,
 } from '../types';
 import { supabaseService } from './supabase';
 import {
@@ -28,7 +29,7 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
 
 export const api = {
   // --------------------------------------------------------------------------
-  // AUTHENTICATION (CLIENT-FIRST WITH GMAIL SMTP / SUPABASE INSTANT FALLBACK)
+  // AUTHENTICATION (PURE CLIENT-SIDE DIRECT VIA SUPABASE SERVICE)
   // --------------------------------------------------------------------------
   async register(data: {
     fullName: string;
@@ -38,113 +39,27 @@ export const api = {
     password: string;
     confirmPassword: string;
   }) {
-    try {
-      const res = await fetchWithTimeout('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }, 2500);
-      const result = await res.json();
-      if (!res.ok) {
-        return { error: result.error || 'Failed to dispatch verification email.' };
-      }
-      return result;
-    } catch {
-      return supabaseService.register(data);
-    }
+    return supabaseService.register(data);
   },
 
   async verifyOtp(data: { email: string; otpCode: string; purpose: 'registration' | 'password_reset' }) {
-    try {
-      const res = await fetchWithTimeout('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }, 2500);
-      const result = await res.json();
-      if (!res.ok) {
-        return { error: result.error || 'Invalid or expired verification code.' };
-      }
-      if (result.token) {
-        localStorage.setItem('rankora_token', result.token);
-      }
-      return result;
-    } catch {
-      return supabaseService.verifyOtp(data);
-    }
+    return supabaseService.verifyOtp(data);
   },
 
   async resendOtp(data: { email: string; purpose: string }) {
-    try {
-      const res = await fetchWithTimeout('/api/auth/resend-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }, 2500);
-      const result = await res.json();
-      if (!res.ok) {
-        return { error: result.error || 'Failed to resend code.' };
-      }
-      return result;
-    } catch {
-      return supabaseService.resendOtp(data);
-    }
+    return supabaseService.resendOtp(data);
   },
 
   async login(data: { email: string; password: string }): Promise<{ success?: boolean; token?: string; user?: CustomerUser; error?: string }> {
-    try {
-      const res = await fetchWithTimeout('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }, 2500);
-      const result = await res.json();
-      if (!res.ok) {
-        const sbResult = await supabaseService.login(data);
-        if (sbResult.user) return sbResult;
-        return { error: result.error || 'Login failed.' };
-      }
-      if (result.token) {
-        localStorage.setItem('rankora_token', result.token);
-      }
-      return result;
-    } catch {
-      return supabaseService.login(data);
-    }
+    return supabaseService.login(data);
   },
 
   async forgotPassword(email: string) {
-    try {
-      const res = await fetchWithTimeout('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      }, 2500);
-      const result = await res.json();
-      if (!res.ok) {
-        return { error: result.error || 'Failed to process request.' };
-      }
-      return result;
-    } catch {
-      return supabaseService.forgotPassword(email);
-    }
+    return supabaseService.forgotPassword(email);
   },
 
   async resetPassword(data: { email: string; otpCode: string; newPassword: string; confirmPassword: string }) {
-    try {
-      const res = await fetchWithTimeout('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      }, 2500);
-      const result = await res.json();
-      if (!res.ok) {
-        return { error: result.error || 'Failed to reset password.' };
-      }
-      return result;
-    } catch {
-      return supabaseService.resetPassword(data);
-    }
+    return supabaseService.resetPassword(data);
   },
 
   async getMe(): Promise<{ user?: CustomerUser; error?: string }> {
@@ -385,7 +300,7 @@ export const api = {
   },
 
   // --------------------------------------------------------------------------
-  // CONTACT INQUIRY (SERVER-SIDE DISPATCH TO info@arventaventures.online)
+  // CONTACT INQUIRY (SUPABASE DIRECT)
   // --------------------------------------------------------------------------
   async sendContactInquiry(data: {
     name: string;
@@ -394,19 +309,69 @@ export const api = {
     subject?: string;
     message: string;
   }): Promise<{ success: boolean; message: string; error?: string }> {
-    try {
-      const res = await fetch('/api/contact/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json();
-      if (!res.ok) {
-        return { success: false, message: '', error: result.error || 'Failed to dispatch inquiry.' };
-      }
-      return { success: true, message: result.message || 'Your inquiry has been successfully sent.' };
-    } catch {
-      return supabaseService.sendContactInquiry(data);
-    }
+    return supabaseService.sendContactInquiry(data);
+  },
+
+  // --------------------------------------------------------------------------
+  // ADMIN PANEL CONTROLS & USER MANAGEMENT
+  // --------------------------------------------------------------------------
+  async getAllUsers(): Promise<{ users: CustomerUser[] }> {
+    return supabaseService.getAllUsers();
+  },
+
+  async updateUser(
+    userId: string,
+    data: Partial<CustomerUser> & { businessName?: string }
+  ): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
+    return supabaseService.updateUser(userId, data);
+  },
+
+  async deleteUser(userId: string): Promise<{ success: boolean; error?: string }> {
+    return supabaseService.deleteUser(userId);
+  },
+
+  async toggleSuspendUser(userId: string): Promise<{ success: boolean; status?: 'active' | 'suspended'; error?: string }> {
+    return supabaseService.toggleSuspendUser(userId);
+  },
+
+  async createUser(data: {
+    fullName: string;
+    email: string;
+    mobileNumber: string;
+    businessName: string;
+    password?: string;
+    planId?: string;
+  }): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
+    return supabaseService.createUser(data);
+  },
+
+  // Impersonation
+  async impersonateUser(targetUserId: string): Promise<{ success: boolean; user?: CustomerUser; error?: string }> {
+    return supabaseService.impersonateUser(targetUserId);
+  },
+
+  async stopImpersonating(): Promise<{ success: boolean; adminUser?: CustomerUser; error?: string }> {
+    return supabaseService.stopImpersonating();
+  },
+
+  getImpersonatorAdmin(): CustomerUser | null {
+    return supabaseService.getImpersonatorAdmin();
+  },
+
+  // Pricing Plans
+  async getPricingPlans(): Promise<PricingPlan[]> {
+    return supabaseService.getPricingPlans();
+  },
+
+  async savePricingPlan(plan: PricingPlan): Promise<{ success: boolean; plans: PricingPlan[] }> {
+    return supabaseService.savePricingPlan(plan);
+  },
+
+  async deletePricingPlan(planId: string): Promise<{ success: boolean; plans: PricingPlan[] }> {
+    return supabaseService.deletePricingPlan(planId);
+  },
+
+  async resetPricingPlans(): Promise<{ success: boolean; plans: PricingPlan[] }> {
+    return supabaseService.resetPricingPlans();
   },
 };

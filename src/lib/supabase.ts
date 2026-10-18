@@ -1,5 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { CustomerUser, BusinessSettings, CustomerReview, GoogleBusinessAccount } from '../types';
+import { CustomerUser, BusinessSettings, CustomerReview, GoogleBusinessAccount, PricingPlan } from '../types';
+
+export const ADMIN_CREDENTIALS = {
+  email: 'info@arventaventures.online',
+  password: 'Jaydeb@123',
+  fullName: 'Jaydeb Jana (Super Admin)',
+  mobileNumber: '+91 7872490719',
+};
 
 const env = (import.meta as any).env || {};
 const supabaseUrl = env.VITE_SUPABASE_URL || 'https://cdrqdpfqkuaqxwzinkam.supabase.co';
@@ -20,6 +27,153 @@ const LOCAL_REVIEWS_KEY = 'rankora_supabase_reviews';
 const LOCAL_GOOGLE_KEY = 'rankora_supabase_google';
 const LOCAL_CURRENT_USER_KEY = 'rankora_current_user';
 const LOCAL_OTP_KEY = 'rankora_supabase_otps';
+const LOCAL_LOGO_KEY_PREFIX = 'rankora_logo_';
+const LOCAL_PLANS_KEY = 'rankora_pricing_plans';
+const LOCAL_IMPERSONATOR_KEY = 'rankora_impersonator_admin';
+
+export const DEFAULT_PRICING_PLANS: PricingPlan[] = [
+  {
+    id: 'pro-plan',
+    name: 'Pro Plan',
+    tagline: 'Essential review automation for single store owners & local shops.',
+    monthlyPrice: 999,
+    yearlyPrice: 799,
+    currency: '₹',
+    isPopular: false,
+    isActive: true,
+    order: 1,
+    whatsAppText: 'Hello Arventa Ventures, I would like to activate the Pro Plan for my RANKORA Google Business Profile automation.',
+    features: [
+      '1 Verified Google Location with live review tracking',
+      '16+ Table Tent Stand Layouts (PNG & 300 DPI Print ready)',
+      '2 Languages Support (English + 1 Regional Language)',
+      'Gemini 3.8 Flash Engine for authentic customer review drafts',
+      'Owner Reply Approval Queue with 1-click publishing',
+      'Custom Review Slug Landing Page with direct Google Maps link',
+      'Standard Email Support (24-hour response turnaround)',
+    ],
+  },
+  {
+    id: 'ultra-plan',
+    name: 'Ultra Plan',
+    tagline: 'High-volume retail chains, agencies & multi-counter stores.',
+    monthlyPrice: 2499,
+    yearlyPrice: 1999,
+    currency: '₹',
+    isPopular: true,
+    isActive: true,
+    order: 2,
+    whatsAppText: 'Hello Arventa Ventures, I would like to activate the Ultra Plan for my RANKORA Google Business Profile automation.',
+    features: [
+      'Multi-Location Support & unlimited QR counter stand downloads',
+      'Zero-Delay Auto-Publishing: owner replies post automatically',
+      'High-Resolution Vector SVG & PDF commercial printing assets',
+      'High-Priority Gemini AI Throughput for instant review drafting',
+      'Custom Domain & Brand Logo Branding on customer landing page',
+      'Dedicated Priority WhatsApp Messaging Support directly by Arventa Ventures',
+      'Dedicated Account Growth Manager for Google Maps local ranking',
+    ],
+  },
+];
+
+function seedDemoUsersIfNeeded(): void {
+  try {
+    const raw = localStorage.getItem(LOCAL_USERS_KEY);
+    const users = raw ? JSON.parse(raw) : {};
+    if (Object.keys(users).length === 0) {
+      const demoUsers = [
+        {
+          id: 'usr_arventa_cafe',
+          email: 'contact@arventacafe.com',
+          fullName: 'Rahul Sharma',
+          businessName: 'Arventa Artisan Cafe & Roastery',
+          mobileNumber: '+91 9830112233',
+          password: 'password123',
+          isVerified: true,
+          role: 'user',
+          status: 'active',
+          planId: 'pro-plan',
+          createdAt: '2026-02-10T10:30:00.000Z',
+        },
+        {
+          id: 'usr_apex_motors',
+          email: 'support@apexmotors.in',
+          fullName: 'Vikramaditya Roy',
+          businessName: 'Apex Supercar Care & Detailing',
+          mobileNumber: '+91 9874556677',
+          password: 'password123',
+          isVerified: true,
+          role: 'user',
+          status: 'active',
+          planId: 'ultra-plan',
+          createdAt: '2026-02-18T14:15:00.000Z',
+        },
+        {
+          id: 'usr_royal_dental',
+          email: 'manager@royaldental.com',
+          fullName: 'Dr. Priya Sen',
+          businessName: 'Royal Aesthetic Dental Clinic',
+          mobileNumber: '+91 9123445566',
+          password: 'password123',
+          isVerified: true,
+          role: 'user',
+          status: 'active',
+          planId: 'pro-plan',
+          createdAt: '2026-03-01T09:00:00.000Z',
+        },
+      ];
+      for (const u of demoUsers) {
+        users[u.email] = u;
+        const allSettings = getLocalStore<Record<string, any>>(LOCAL_SETTINGS_KEY, {});
+        if (!allSettings[u.id]) {
+          allSettings[u.id] = {
+            id: 'biz-' + u.id,
+            userId: u.id,
+            businessName: u.businessName,
+            category: 'Retail & Service',
+            placeId: 'ChIJ' + u.id.slice(-6),
+            googleReviewUrl: 'https://g.page/r/' + u.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            productsAndServices: 'High quality collections and customer care',
+            customerExperience: 'Clean, modern, and highly customer-friendly store environment.',
+            brandTone: 'friendly',
+            targetKeywords: ['best store', 'friendly staff', 'great collection'],
+            customSlug: u.businessName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            languagePreferences: [{ code: 'en', name: 'English', percentage: 100 }],
+            autoReplyEnabled: true,
+            autoReplyMode: 'approval',
+            minStarRating: 4,
+            responseDelayMinutes: 5,
+            updatedAt: new Date().toISOString(),
+          };
+          setLocalStore(LOCAL_SETTINGS_KEY, allSettings);
+        }
+      }
+      setLocalStore(LOCAL_USERS_KEY, users);
+    }
+  } catch (e) {
+    console.warn('Seed demo users notice:', e);
+  }
+}
+
+export function getStoredLogo(userId: string): string {
+  try {
+    return localStorage.getItem(LOCAL_LOGO_KEY_PREFIX + userId) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function setStoredLogo(userId: string, logo: string): void {
+  try {
+    if (!logo) {
+      localStorage.removeItem(LOCAL_LOGO_KEY_PREFIX + userId);
+    } else {
+      localStorage.setItem(LOCAL_LOGO_KEY_PREFIX + userId, logo);
+    }
+  } catch (e) {
+    console.warn('Dedicated logo storage notice:', e);
+  }
+}
 
 function getLocalStore<T>(key: string, defaultValue: T): T {
   try {
@@ -34,7 +188,7 @@ function setLocalStore<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (e) {
-    console.warn('Storage set failed', e);
+    console.warn('Storage set failed, attempting fallback:', e);
   }
 }
 
@@ -204,15 +358,55 @@ export const supabaseService = {
   async login(data: { email: string; password: string }) {
     const email = data.email.toLowerCase().trim();
 
+    // 0. Super Admin Login Authentication
+    if (email === ADMIN_CREDENTIALS.email.toLowerCase()) {
+      if (data.password !== ADMIN_CREDENTIALS.password) {
+        return { error: 'Invalid password for Super Admin account. Please check your credentials.' };
+      }
+
+      const adminUser: CustomerUser = {
+        id: 'admin_arventa_super',
+        email: ADMIN_CREDENTIALS.email,
+        fullName: ADMIN_CREDENTIALS.fullName,
+        mobileNumber: ADMIN_CREDENTIALS.mobileNumber,
+        isVerified: true,
+        role: 'admin',
+        status: 'active',
+        businessName: 'Arventa Ventures HQ',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      };
+
+      const token = 'sb_admin_token_' + btoa(JSON.stringify({ userId: adminUser.id, email: adminUser.email, role: 'admin' }));
+      localStorage.setItem('rankora_token', token);
+      localStorage.removeItem('reputepulse_token');
+      localStorage.removeItem(LOCAL_IMPERSONATOR_KEY);
+      setLocalStore(LOCAL_CURRENT_USER_KEY, adminUser);
+      await this.initDefaultBusinessSettings(adminUser.id, 'Arventa Ventures HQ');
+
+      return {
+        success: true,
+        token,
+        user: adminUser,
+      };
+    }
+
     try {
+      // Check if user is suspended in local store
+      seedDemoUsersIfNeeded();
+      const users = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
+      const user = users[email];
+
+      if (user && user.status === 'suspended') {
+        return {
+          error: 'Your account has been suspended by the administrator. Please contact info@arventaventures.online for assistance.',
+        };
+      }
+
       // 1. Try Supabase Auth Sign In
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password: data.password,
       });
-
-      const users = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
-      const user = users[email];
 
       if (!authError && authData.user) {
         const currentUser: CustomerUser = {
@@ -221,12 +415,15 @@ export const supabaseService = {
           fullName: authData.user.user_metadata?.full_name || user?.fullName || 'Business Owner',
           mobileNumber: authData.user.user_metadata?.mobile_number || user?.mobileNumber || '',
           isVerified: true,
+          role: user?.role || 'user',
+          status: user?.status || 'active',
+          planId: user?.planId || 'pro-plan',
           createdAt: authData.user.created_at || new Date().toISOString(),
         };
 
         const token = authData.session?.access_token || 'sb_token_' + btoa(JSON.stringify({ userId: currentUser.id, email }));
         localStorage.setItem('rankora_token', token);
-        localStorage.setItem('reputepulse_token', token);
+        localStorage.removeItem('reputepulse_token');
         setLocalStore(LOCAL_CURRENT_USER_KEY, currentUser);
 
         // Ensure business settings exist
@@ -243,7 +440,7 @@ export const supabaseService = {
       if (user && user.password === data.password) {
         const token = 'sb_token_' + btoa(JSON.stringify({ userId: user.id, email: user.email }));
         localStorage.setItem('rankora_token', token);
-        localStorage.setItem('reputepulse_token', token);
+        localStorage.removeItem('reputepulse_token');
         setLocalStore(LOCAL_CURRENT_USER_KEY, user);
         await this.initDefaultBusinessSettings(user.id, user.businessName || `${user.fullName}'s Business`);
 
@@ -256,6 +453,9 @@ export const supabaseService = {
             fullName: user.fullName,
             mobileNumber: user.mobileNumber,
             isVerified: true,
+            role: user.role || 'user',
+            status: user.status || 'active',
+            planId: user.planId || 'pro-plan',
             createdAt: user.createdAt,
           },
         };
@@ -268,11 +468,14 @@ export const supabaseService = {
         fullName: 'Business Owner',
         mobileNumber: '+91 9876543210',
         isVerified: true,
+        role: 'user',
+        status: 'active',
+        planId: 'pro-plan',
         createdAt: new Date().toISOString(),
       };
       const token = 'sb_token_' + btoa(JSON.stringify({ userId: defaultUser.id, email }));
       localStorage.setItem('rankora_token', token);
-      localStorage.setItem('reputepulse_token', token);
+      localStorage.removeItem('reputepulse_token');
       setLocalStore(LOCAL_CURRENT_USER_KEY, defaultUser);
       await this.initDefaultBusinessSettings(defaultUser.id, 'My Google Business');
 
@@ -357,9 +560,10 @@ export const supabaseService = {
       businessName,
       category: 'Retail Store',
       placeId: 'ChIJQ6v9a_d-lDkR4Vq7hC8k97s',
+      googleReviewUrl: 'https://search.google.com/local/writereview?placeid=ChIJQ6v9a_d-lDkR4Vq7hC8k97s',
       customSlug,
-      googleReviewUrl: 'https://g.page/r/sample-business-review',
-      productsAndServices: 'Exclusive collection, premium garments, customized styling, and alterations',
+      productsAndServices: '',
+      services: [],
       reviewWritingRules: 'Focus on friendly staff, store ambiance, and prompt customer assistance.',
       reviewStyleAndRules: 'Focus on friendly staff, store ambiance, and prompt customer assistance.',
       customerExperience: 'Clean, modern, and highly customer-friendly store environment.',
@@ -395,25 +599,80 @@ export const supabaseService = {
   async getBusinessSettings(): Promise<{ settings: BusinessSettings }> {
     const me = this.getMe();
     const userId = me.user?.id || 'usr_default';
+    const allSettings = getLocalStore<Record<string, BusinessSettings>>(LOCAL_SETTINGS_KEY, {});
+    let localSettings = allSettings[userId];
 
+    if (!localSettings) {
+      localSettings = await this.initDefaultBusinessSettings(
+        userId,
+        me.user?.fullName ? `${me.user.fullName}'s Business` : 'My Business'
+      );
+    }
+
+    // Ensure logo is loaded from dedicated store if missing in settings
+    if (!localSettings.businessLogo) {
+      const storedLogo = getStoredLogo(userId);
+      if (storedLogo) {
+        localSettings.businessLogo = storedLogo;
+      }
+    }
+
+    // Non-blocking query to Supabase with 1.5s timeout to avoid any page freeze
     try {
-      const { data, error } = await supabase
+      const fetchPromise = supabase
         .from('business_settings')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
-      if (!error && data && data.settings) {
-        return { settings: data.settings };
+      const timeoutPromise = new Promise<any>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 1500)
+      );
+
+      const res: any = await Promise.race([fetchPromise, timeoutPromise]);
+      const data = res?.data;
+
+      if (data) {
+        const remoteLogo = data.google_account_info?.businessLogo || '';
+        const effectiveLogo = remoteLogo || localSettings.businessLogo || getStoredLogo(userId);
+
+        const mapped: BusinessSettings = {
+          id: data.id || localSettings.id,
+          userId: data.user_id || userId,
+          businessName: data.business_name || localSettings.businessName,
+          category: data.category || localSettings.category,
+          placeId: data.place_id ?? localSettings.placeId,
+          googleReviewUrl: data.google_review_url ?? localSettings.googleReviewUrl,
+          productsAndServices: data.products_and_services ?? localSettings.productsAndServices,
+          services: data.google_account_info?.services ?? (localSettings.services || []),
+          customerExperience: data.customer_experience ?? localSettings.customerExperience,
+          brandTone: data.brand_tone || localSettings.brandTone,
+          targetKeywords: data.target_keywords || localSettings.targetKeywords,
+          customSlug: data.custom_slug || localSettings.customSlug,
+          languagePreferences: data.language_preferences || localSettings.languagePreferences,
+          autoReplyEnabled: data.auto_reply_enabled ?? localSettings.autoReplyEnabled,
+          autoReplyMode: data.auto_reply_mode || localSettings.autoReplyMode,
+          minStarRating: data.min_star_rating ?? localSettings.minStarRating,
+          responseDelayMinutes: data.response_delay_minutes ?? localSettings.responseDelayMinutes,
+          businessLogo: effectiveLogo,
+          reviewWritingRules: data.google_account_info?.reviewWritingRules || localSettings.reviewWritingRules,
+          reviewStyleAndRules: data.google_account_info?.reviewWritingRules || localSettings.reviewStyleAndRules,
+          geminiApiKey: data.google_account_info?.geminiApiKey || localSettings.geminiApiKey,
+          updatedAt: data.updated_at || localSettings.updatedAt,
+        };
+
+        allSettings[userId] = mapped;
+        setLocalStore(LOCAL_SETTINGS_KEY, allSettings);
+        if (effectiveLogo) {
+          setStoredLogo(userId, effectiveLogo);
+        }
+        return { settings: mapped };
       }
-    } catch {}
-
-    const allSettings = getLocalStore<Record<string, BusinessSettings>>(LOCAL_SETTINGS_KEY, {});
-    let settings = allSettings[userId];
-    if (!settings) {
-      settings = await this.initDefaultBusinessSettings(userId, me.user?.fullName ? `${me.user.fullName}'s Business` : 'My Business');
+    } catch {
+      // Return fast cached local settings
     }
-    return { settings };
+
+    return { settings: localSettings };
   },
 
   async updateBusinessSettings(
@@ -425,19 +684,23 @@ export const supabaseService = {
     const existing = allSettings[userId] || (await this.initDefaultBusinessSettings(userId, 'My Business'));
 
     const effectiveRules = updates.reviewStyleAndRules !== undefined ? updates.reviewStyleAndRules : updates.reviewWritingRules;
+    const finalLogo = updates.businessLogo !== undefined ? updates.businessLogo : (existing.businessLogo || getStoredLogo(userId));
 
     const newSettings: BusinessSettings = {
       ...existing,
       ...updates,
+      businessLogo: finalLogo,
       reviewWritingRules: effectiveRules !== undefined ? effectiveRules : existing.reviewWritingRules,
       reviewStyleAndRules: effectiveRules !== undefined ? effectiveRules : existing.reviewStyleAndRules,
       updatedAt: new Date().toISOString(),
     };
 
+    // 1. Instant local persistence
+    setStoredLogo(userId, finalLogo || '');
     allSettings[userId] = newSettings;
     setLocalStore(LOCAL_SETTINGS_KEY, allSettings);
 
-    // Update user profile if changed
+    // 2. Update user profile if changed
     let updatedUser = me.user;
     if (updates.fullName || updates.mobileNumber) {
       const users = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
@@ -456,17 +719,45 @@ export const supabaseService = {
       }
     }
 
-    try {
-      await supabase.from('business_settings').upsert({
-        user_id: userId,
-        settings: newSettings,
-        updated_at: new Date().toISOString(),
-      });
-    } catch {}
+    // 3. Non-blocking asynchronous sync to Supabase with real table columns
+    const dbPayload: any = {
+      user_id: userId,
+      business_name: newSettings.businessName,
+      category: newSettings.category || 'Retail Store',
+      place_id: newSettings.placeId || '',
+      google_review_url: newSettings.googleReviewUrl || '',
+      products_and_services: newSettings.productsAndServices || '',
+      customer_experience: newSettings.customerExperience || '',
+      brand_tone: newSettings.brandTone || 'friendly',
+      target_keywords: newSettings.targetKeywords || [],
+      custom_slug: newSettings.customSlug || ('business-' + userId.slice(-4)),
+      language_preferences: newSettings.languagePreferences || [{ code: 'en', name: 'English', percentage: 100 }],
+      auto_reply_enabled: Boolean(newSettings.autoReplyEnabled),
+      auto_reply_mode: newSettings.autoReplyMode || 'approval',
+      min_star_rating: newSettings.minStarRating || 4,
+      response_delay_minutes: newSettings.responseDelayMinutes || 5,
+      google_account_info: {
+        ...((existing as any).googleAccountInfo || {}),
+        businessLogo: finalLogo || '',
+        reviewWritingRules: newSettings.reviewWritingRules || '',
+        geminiApiKey: newSettings.geminiApiKey || '',
+        services: newSettings.services || [],
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    // Background sync - does not block UI return
+    (async () => {
+      try {
+        await supabase.from('business_settings').upsert(dbPayload, { onConflict: 'user_id' });
+      } catch (err) {
+        console.warn('Supabase business_settings sync notice:', err);
+      }
+    })();
 
     return {
       success: true,
-      message: 'Business profile and settings saved successfully to Supabase.',
+      message: 'Business profile and logo saved successfully!',
       settings: newSettings,
       user: updatedUser,
     };
@@ -692,6 +983,39 @@ export const supabaseService = {
   // --------------------------------------------------------------------------
   async getPublicBusiness(slug: string): Promise<any> {
     const sanitized = slug.toLowerCase().trim();
+
+    // 1. Query Supabase business_settings table by custom_slug
+    try {
+      const { data, error } = await supabase
+        .from('business_settings')
+        .select('*')
+        .ilike('custom_slug', sanitized)
+        .maybeSingle();
+
+      if (data && !error) {
+        return {
+          businessName: data.business_name,
+          businessLogo: data.google_account_info?.businessLogo || '',
+          category: data.category,
+          customSlug: data.custom_slug,
+          googleReviewUrl: data.google_review_url,
+          productsAndServices: data.products_and_services || '',
+          customerExperience: data.customer_experience || '',
+          brandTone: data.brand_tone || 'friendly',
+          targetKeywords: data.target_keywords || [],
+          languagePreferences: data.language_preferences || [
+            { code: 'en', name: 'English', percentage: 70 },
+            { code: 'hi', name: 'Hindi', percentage: 30 },
+          ],
+          shopAiDetails: data.google_account_info?.shopAiDetails || '',
+          reviewWritingRules: data.google_account_info?.reviewWritingRules || '',
+        };
+      }
+    } catch (err) {
+      console.warn('Supabase remote getPublicBusiness check note:', err);
+    }
+
+    // 2. Fall back to local store
     const allSettings = getLocalStore<Record<string, BusinessSettings>>(LOCAL_SETTINGS_KEY, {});
 
     for (const biz of Object.values(allSettings)) {
@@ -710,6 +1034,8 @@ export const supabaseService = {
             { code: 'en', name: 'English', percentage: 70 },
             { code: 'hi', name: 'Hindi', percentage: 30 },
           ],
+          shopAiDetails: biz.shopAiDetails || '',
+          reviewWritingRules: biz.reviewWritingRules || '',
         };
       }
     }
@@ -729,5 +1055,255 @@ export const supabaseService = {
         { code: 'hi', name: 'Hindi', percentage: 30 },
       ],
     };
+  },
+
+  // --------------------------------------------------------------------------
+  // ADMIN CONTROL CENTER & USER MANAGEMENT
+  // --------------------------------------------------------------------------
+  getAllUsers(): { users: CustomerUser[] } {
+    seedDemoUsersIfNeeded();
+    const usersRecord = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
+    const allSettings = getLocalStore<Record<string, BusinessSettings>>(LOCAL_SETTINGS_KEY, {});
+
+    const usersList: CustomerUser[] = Object.values(usersRecord).map((u: any) => {
+      const userSettings = allSettings[u.id];
+      return {
+        id: u.id,
+        email: u.email,
+        fullName: u.fullName || 'Business Owner',
+        mobileNumber: u.mobileNumber || '',
+        isVerified: u.isVerified ?? true,
+        createdAt: u.createdAt || new Date().toISOString(),
+        role: u.role || 'user',
+        status: u.status || 'active',
+        businessName: userSettings?.businessName || u.businessName || `${u.fullName}'s Business`,
+        planId: u.planId || 'pro-plan',
+      };
+    });
+
+    return { users: usersList };
+  },
+
+  updateUser(
+    userId: string,
+    data: Partial<CustomerUser> & { businessName?: string }
+  ): { success: boolean; user?: CustomerUser; error?: string } {
+    const usersRecord = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
+    const targetEmail = Object.keys(usersRecord).find((e) => usersRecord[e].id === userId);
+
+    if (!targetEmail) {
+      return { success: false, error: 'User not found in system.' };
+    }
+
+    const current = usersRecord[targetEmail];
+    const newEmail = data.email ? data.email.toLowerCase().trim() : targetEmail;
+
+    const updatedUser = {
+      ...current,
+      ...data,
+      email: newEmail,
+    };
+
+    if (newEmail !== targetEmail) {
+      delete usersRecord[targetEmail];
+      usersRecord[newEmail] = updatedUser;
+    } else {
+      usersRecord[targetEmail] = updatedUser;
+    }
+
+    setLocalStore(LOCAL_USERS_KEY, usersRecord);
+
+    // Update business settings if businessName changed
+    if (data.businessName) {
+      const allSettings = getLocalStore<Record<string, BusinessSettings>>(LOCAL_SETTINGS_KEY, {});
+      if (allSettings[userId]) {
+        allSettings[userId].businessName = data.businessName;
+        allSettings[userId].updatedAt = new Date().toISOString();
+        setLocalStore(LOCAL_SETTINGS_KEY, allSettings);
+      }
+    }
+
+    // If currently logged-in user is this user, update active session
+    const currentUser = getLocalStore<CustomerUser | null>(LOCAL_CURRENT_USER_KEY, null);
+    if (currentUser && currentUser.id === userId) {
+      setLocalStore(LOCAL_CURRENT_USER_KEY, { ...currentUser, ...updatedUser });
+    }
+
+    return { success: true, user: updatedUser };
+  },
+
+  deleteUser(userId: string): { success: boolean; error?: string } {
+    if (userId === 'admin_arventa_super') {
+      return { success: false, error: 'Cannot delete the Super Administrator account.' };
+    }
+
+    const usersRecord = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
+    const targetEmail = Object.keys(usersRecord).find((e) => usersRecord[e].id === userId);
+
+    if (targetEmail) {
+      delete usersRecord[targetEmail];
+      setLocalStore(LOCAL_USERS_KEY, usersRecord);
+    }
+
+    // Clean up settings, reviews, google account
+    const allSettings = getLocalStore<Record<string, any>>(LOCAL_SETTINGS_KEY, {});
+    delete allSettings[userId];
+    setLocalStore(LOCAL_SETTINGS_KEY, allSettings);
+
+    const allReviews = getLocalStore<Record<string, any>>(LOCAL_REVIEWS_KEY, {});
+    delete allReviews[userId];
+    setLocalStore(LOCAL_REVIEWS_KEY, allReviews);
+
+    const allGoogle = getLocalStore<Record<string, any>>(LOCAL_GOOGLE_KEY, {});
+    delete allGoogle[userId];
+    setLocalStore(LOCAL_GOOGLE_KEY, allGoogle);
+
+    return { success: true };
+  },
+
+  toggleSuspendUser(userId: string): { success: boolean; status?: 'active' | 'suspended'; error?: string } {
+    if (userId === 'admin_arventa_super') {
+      return { success: false, error: 'Cannot suspend the Super Administrator account.' };
+    }
+
+    const usersRecord = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
+    const targetEmail = Object.keys(usersRecord).find((e) => usersRecord[e].id === userId);
+
+    if (!targetEmail) {
+      return { success: false, error: 'User not found in system.' };
+    }
+
+    const currentStatus = usersRecord[targetEmail].status || 'active';
+    const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    usersRecord[targetEmail].status = newStatus;
+    setLocalStore(LOCAL_USERS_KEY, usersRecord);
+
+    return { success: true, status: newStatus };
+  },
+
+  createUser(data: {
+    fullName: string;
+    email: string;
+    mobileNumber: string;
+    businessName: string;
+    password?: string;
+    planId?: string;
+  }): { success: boolean; user?: CustomerUser; error?: string } {
+    const email = data.email.toLowerCase().trim();
+    const usersRecord = getLocalStore<Record<string, any>>(LOCAL_USERS_KEY, {});
+
+    if (usersRecord[email] || email === ADMIN_CREDENTIALS.email.toLowerCase()) {
+      return { success: false, error: 'A user with this email address already exists.' };
+    }
+
+    const newId = 'usr_' + Math.random().toString(36).substring(2, 10);
+    const newUser: CustomerUser = {
+      id: newId,
+      email,
+      fullName: data.fullName,
+      mobileNumber: data.mobileNumber,
+      businessName: data.businessName,
+      isVerified: true,
+      role: 'user',
+      status: 'active',
+      planId: data.planId || 'pro-plan',
+      createdAt: new Date().toISOString(),
+    };
+
+    usersRecord[email] = {
+      ...newUser,
+      password: data.password || 'password123',
+    };
+    setLocalStore(LOCAL_USERS_KEY, usersRecord);
+
+    // Initialize business settings
+    this.initDefaultBusinessSettings(newId, data.businessName);
+
+    return { success: true, user: newUser };
+  },
+
+  // --------------------------------------------------------------------------
+  // ADMIN IMPERSONATION
+  // --------------------------------------------------------------------------
+  impersonateUser(targetUserId: string): { success: boolean; user?: CustomerUser; error?: string } {
+    const adminUser = getLocalStore<CustomerUser | null>(LOCAL_CURRENT_USER_KEY, null);
+    if (!adminUser) {
+      return { success: false, error: 'No active session to impersonate from.' };
+    }
+
+    const { users } = this.getAllUsers();
+    const target = users.find((u) => u.id === targetUserId);
+    if (!target) {
+      return { success: false, error: 'Target user not found.' };
+    }
+
+    // Save admin in impersonator key if not already saved
+    const existingImpersonator = getLocalStore<CustomerUser | null>(LOCAL_IMPERSONATOR_KEY, null);
+    if (!existingImpersonator) {
+      setLocalStore(LOCAL_IMPERSONATOR_KEY, adminUser);
+    }
+
+    // Switch active session to target user
+    setLocalStore(LOCAL_CURRENT_USER_KEY, target);
+    const token = 'sb_impersonated_' + btoa(JSON.stringify({ userId: target.id, email: target.email }));
+    localStorage.setItem('rankora_token', token);
+
+    return { success: true, user: target };
+  },
+
+  stopImpersonating(): { success: boolean; adminUser?: CustomerUser; error?: string } {
+    const adminUser = getLocalStore<CustomerUser | null>(LOCAL_IMPERSONATOR_KEY, null);
+    if (!adminUser) {
+      return { success: false, error: 'No active impersonation session found.' };
+    }
+
+    // Restore admin session
+    setLocalStore(LOCAL_CURRENT_USER_KEY, adminUser);
+    localStorage.removeItem(LOCAL_IMPERSONATOR_KEY);
+    const token = 'sb_admin_token_' + btoa(JSON.stringify({ userId: adminUser.id, email: adminUser.email, role: 'admin' }));
+    localStorage.setItem('rankora_token', token);
+
+    return { success: true, adminUser };
+  },
+
+  getImpersonatorAdmin(): CustomerUser | null {
+    return getLocalStore<CustomerUser | null>(LOCAL_IMPERSONATOR_KEY, null);
+  },
+
+  // --------------------------------------------------------------------------
+  // PRICING PLANS MANAGEMENT
+  // --------------------------------------------------------------------------
+  getPricingPlans(): PricingPlan[] {
+    const stored = getLocalStore<PricingPlan[] | null>(LOCAL_PLANS_KEY, null);
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      return stored;
+    }
+    setLocalStore(LOCAL_PLANS_KEY, DEFAULT_PRICING_PLANS);
+    return DEFAULT_PRICING_PLANS;
+  },
+
+  savePricingPlan(plan: PricingPlan): { success: boolean; plans: PricingPlan[] } {
+    const plans = this.getPricingPlans();
+    const index = plans.findIndex((p) => p.id === plan.id);
+    let updatedPlans: PricingPlan[];
+    if (index >= 0) {
+      updatedPlans = plans.map((p) => (p.id === plan.id ? plan : p));
+    } else {
+      updatedPlans = [...plans, plan];
+    }
+    setLocalStore(LOCAL_PLANS_KEY, updatedPlans);
+    return { success: true, plans: updatedPlans };
+  },
+
+  deletePricingPlan(planId: string): { success: boolean; plans: PricingPlan[] } {
+    const plans = this.getPricingPlans();
+    const updatedPlans = plans.filter((p) => p.id !== planId);
+    setLocalStore(LOCAL_PLANS_KEY, updatedPlans);
+    return { success: true, plans: updatedPlans };
+  },
+
+  resetPricingPlans(): { success: boolean; plans: PricingPlan[] } {
+    setLocalStore(LOCAL_PLANS_KEY, DEFAULT_PRICING_PLANS);
+    return { success: true, plans: DEFAULT_PRICING_PLANS };
   },
 };

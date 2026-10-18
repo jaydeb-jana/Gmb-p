@@ -40,6 +40,30 @@ const DEFAULT_HIGHLIGHT_CHIPS = [
   'Delicious Offerings',
 ];
 
+function pickLanguageByWeight(
+  preferences?: Array<{ code: string; name: string; percentage?: number }>
+): string {
+  if (!preferences || preferences.length === 0) return 'English';
+
+  // Filter languages with percentage > 0
+  const active = preferences.filter((p) => (Number(p.percentage) || 0) > 0);
+  if (active.length === 0) return preferences[0]?.name || 'English';
+  if (active.length === 1) return active[0].name;
+
+  const total = active.reduce((sum, p) => sum + (Number(p.percentage) || 0), 0);
+  if (total <= 0) return active[0].name;
+
+  const random = Math.random() * total;
+  let running = 0;
+  for (const item of active) {
+    running += Number(item.percentage) || 0;
+    if (random <= running) {
+      return item.name;
+    }
+  }
+  return active[0].name;
+}
+
 export function PublicReviewPage({ slug, onBackToDashboard }: PublicReviewPageProps) {
   const [business, setBusiness] = useState<PublicBusinessData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +91,7 @@ export function PublicReviewPage({ slug, onBackToDashboard }: PublicReviewPagePr
         } else {
           setBusiness(data);
           if (data.languagePreferences && data.languagePreferences.length > 0) {
-            setSelectedLanguage(data.languagePreferences[0].name);
+            setSelectedLanguage(pickLanguageByWeight(data.languagePreferences));
           }
         }
       })
@@ -300,18 +324,27 @@ export function PublicReviewPage({ slug, onBackToDashboard }: PublicReviewPagePr
             onChange={(e) => setSelectedLanguage(e.target.value)}
             className="px-2.5 py-1 text-xs font-medium bg-white border border-[#dadce0] rounded-md text-[#202124]"
           >
-            {(business.languagePreferences && business.languagePreferences.length > 0
-              ? business.languagePreferences
-              : [
-                  { code: 'en', name: 'English (India)' },
-                  { code: 'hi', name: 'Hindi' },
-                  { code: 'bn', name: 'Bengali' },
-                ]
-            ).map((lang) => (
-              <option key={lang.code} value={lang.name}>
-                {lang.name}
-              </option>
-            ))}
+            {(() => {
+              const configured = business.languagePreferences && business.languagePreferences.length > 0
+                ? business.languagePreferences
+                : [
+                    { code: 'en', name: 'English' },
+                    { code: 'hi', name: 'Hindi' },
+                    { code: 'bn', name: 'Bengali' },
+                  ];
+              
+              const extras = [
+                { code: 'en', name: 'English' },
+                { code: 'hi', name: 'Hindi' },
+                { code: 'bn', name: 'Bengali' },
+              ].filter((ex) => !configured.some((c) => c.name.toLowerCase() === ex.name.toLowerCase()));
+
+              return [...configured, ...extras].map((lang) => (
+                <option key={lang.code} value={lang.name}>
+                  {lang.name}
+                </option>
+              ));
+            })()}
           </select>
         </div>
 

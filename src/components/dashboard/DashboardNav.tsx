@@ -12,6 +12,7 @@ import {
   Crown,
   Building2,
   ShieldCheck,
+  ExternalLink,
 } from 'lucide-react';
 import { CustomerUser, GoogleBusinessAccount } from '../../types';
 
@@ -23,7 +24,33 @@ export type DashboardTab =
   | 'docs'
   | 'plans'
   | 'contact'
-  | 'security';
+  | 'security'
+  | 'admin_panel';
+
+export const TAB_ROUTES: Record<DashboardTab, string> = {
+  overview: '/',
+  business_settings: '/business-profile',
+  review_links: '/review-links',
+  review_replies: '/ai-review',
+  docs: '/docs',
+  plans: '/plans',
+  contact: '/contact',
+  security: '/security',
+  admin_panel: '/admin',
+};
+
+export function getTabFromPath(pathname: string): DashboardTab {
+  const cleanPath = pathname.replace(/\/+$/, '') || '/';
+  if (cleanPath === '/admin' || cleanPath === '/admin-panel') return 'admin_panel';
+  if (cleanPath === '/business-profile' || cleanPath === '/settings') return 'business_settings';
+  if (cleanPath === '/review-links' || cleanPath === '/qr-stands') return 'review_links';
+  if (cleanPath === '/ai-review' || cleanPath === '/review-replies') return 'review_replies';
+  if (cleanPath === '/docs') return 'docs';
+  if (cleanPath === '/plans') return 'plans';
+  if (cleanPath === '/contact') return 'contact';
+  if (cleanPath === '/security') return 'security';
+  return 'overview';
+}
 
 interface DashboardNavProps {
   isOpen: boolean;
@@ -80,36 +107,42 @@ export function DashboardNav({
       id: 'overview' as DashboardTab,
       label: 'Home & Overview',
       icon: LayoutDashboard,
+      path: TAB_ROUTES['overview'],
       badge: null,
     },
     {
       id: 'business_settings' as DashboardTab,
       label: 'Business Profile',
       icon: Sliders,
+      path: TAB_ROUTES['business_settings'],
       badge: null,
     },
     {
       id: 'review_links' as DashboardTab,
       label: 'Review Link & QR Stand',
       icon: QrCode,
+      path: TAB_ROUTES['review_links'],
       badge: null,
     },
     {
       id: 'review_replies' as DashboardTab,
       label: 'AI Review',
       icon: MessageSquareCode,
+      path: TAB_ROUTES['review_replies'],
       badge: null,
     },
     {
       id: 'docs' as DashboardTab,
       label: 'Gemini AI API',
       icon: FileText,
+      path: TAB_ROUTES['docs'],
       badge: null,
     },
     {
       id: 'plans' as DashboardTab,
       label: 'Plans',
       icon: Crown,
+      path: TAB_ROUTES['plans'],
       badge: 'Pro / Ultra',
       badgeColor: 'bg-[#e8f0fe] text-[#1a73e8] border-[#d2e3fc]',
     },
@@ -117,12 +150,14 @@ export function DashboardNav({
       id: 'contact' as DashboardTab,
       label: 'Contact',
       icon: Building2,
+      path: TAB_ROUTES['contact'],
       badge: null,
     },
     {
       id: 'security' as DashboardTab,
       label: 'Data Security',
       icon: ShieldCheck,
+      path: TAB_ROUTES['security'],
       badge: null,
     },
   ];
@@ -158,10 +193,10 @@ export function DashboardNav({
               <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M4 10V19C4 19.5523 4.44772 20 5 20H19C19.5523 20 20 19.5523 20 19V10" stroke="#1A73E8" strokeWidth="2" strokeLinecap="round"/>
                 <path d="M2 7L4.5 4H19.5L22 7L20 10H4L2 7Z" fill="#1A73E8"/>
-                <path d="M7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 11.1046 3 10" stroke="#EA4335" strokeWidth="2"/>
-                <path d="M11 10C11 11.1046 10.1046 12 9 12C7.89543 12 7 11.1046 7 10" stroke="#FBBC04" strokeWidth="2"/>
-                <path d="M15 10C15 11.1046 14.1046 12 13 12C11.8954 12 11 11.1046 11 10" stroke="#34A853" strokeWidth="2"/>
-                <path d="M19 10C19 11.1046 18.1046 12 17 12C15.8954 12 15 11.1046 15 10" stroke="#1A73E8" strokeWidth="2"/>
+                <path d="M7 10C7 11.1046 6.10457 12 5 12C3.89543 12 3 10" stroke="#EA4335" strokeWidth="2"/>
+                <path d="M11 10C11 11.1046 10.1046 12 9 12C7.89543 12 7 10" stroke="#FBBC04" strokeWidth="2"/>
+                <path d="M15 10C15 11.1046 14.1046 12 13 12C11.8954 12 11 10" stroke="#34A853" strokeWidth="2"/>
+                <path d="M19 10C19 11.1046 18.1046 12 17 12C15.8954 12 15 10" stroke="#1A73E8" strokeWidth="2"/>
                 <path d="M9 20V14H15V20" stroke="#1A73E8" strokeWidth="2"/>
               </svg>
             </div>
@@ -188,6 +223,45 @@ export function DashboardNav({
 
         {/* Navigation Items List */}
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+          {/* Super Admin Control Center Item */}
+          {(user?.role === 'admin' || user?.email === 'info@arventaventures.online') && (
+            <div className="mb-2.5 pb-2.5 border-b border-[#dadce0]">
+              <button
+                type="button"
+                onClick={() => handleSelectTab('admin_panel')}
+                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer text-left group ${
+                  activeTab === 'admin_panel'
+                    ? 'bg-gradient-to-r from-[#1a73e8] to-[#1557b0] text-white font-semibold shadow-xs'
+                    : 'bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc] border border-[#d2e3fc]'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div
+                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      activeTab === 'admin_panel'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-[#1a73e8] text-white shadow-2xs'
+                    }`}
+                  >
+                    <ShieldCheck className="w-5 h-5 text-[#fbbc04]" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1">
+                      <span>Admin Control Center</span>
+                    </div>
+                    <div
+                      className={`text-[11px] truncate ${
+                        activeTab === 'admin_panel' ? 'text-white/80' : 'text-[#5f6368]'
+                      }`}
+                    >
+                      Users, Plans &amp; Root Controls
+                    </div>
+                  </div>
+                </div>
+                <ChevronRight className="w-4 h-4 shrink-0 opacity-70" />
+              </button>
+            </div>
+          )}
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -239,6 +313,23 @@ export function DashboardNav({
             );
           })}
         </div>
+
+        {/* Preview Customer Review Landing Page Shortcut */}
+        {onOpenPublicPage && (
+          <div className="px-3 pb-2 pt-1 border-t border-[#f1f3f4]">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onOpenPublicPage();
+              }}
+              className="w-full py-2.5 px-3 bg-[#e8f0fe] hover:bg-[#d2e3fc] text-[#1a73e8] rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>Preview Customer Review Page</span>
+            </button>
+          </div>
+        )}
 
         {/* Drawer Footer with User & Sign Out */}
         <div className="p-3.5 border-t border-[#dadce0] bg-[#f8f9fa] shrink-0 space-y-2.5">

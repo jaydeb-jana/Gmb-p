@@ -1,3 +1,6 @@
+export type UserRole = 'admin' | 'user';
+export type UserStatus = 'active' | 'suspended';
+
 export interface CustomerUser {
   id: string;
   email: string;
@@ -5,6 +8,25 @@ export interface CustomerUser {
   mobileNumber: string;
   isVerified: boolean;
   createdAt: string;
+  role?: UserRole;
+  status?: UserStatus;
+  businessName?: string;
+  planId?: string;
+  lastLogin?: string;
+}
+
+export interface PricingPlan {
+  id: string;
+  name: string;
+  tagline: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  currency: string;
+  isPopular?: boolean;
+  features: string[];
+  whatsAppText?: string;
+  isActive: boolean;
+  order: number;
 }
 
 export interface GoogleBusinessAccount {

@@ -19,10 +19,10 @@ export async function testGeminiApiKey(apiKey: string): Promise<{ valid: boolean
     });
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
-      contents: 'Respond with "Ready"',
+      contents: 'Hi! Please reply with a short friendly greeting confirming connection.',
     });
     if (response && response.text) {
-      return { valid: true, message: 'Connected to Gemini 3.8 Flash successfully via Supabase client!' };
+      return { valid: true, message: response.text.trim() };
     }
     return { valid: false, message: 'Received empty response from Gemini API.' };
   } catch (err: any) {
@@ -94,6 +94,32 @@ Keep it concise, authentic, friendly, and approximately 2-4 sentences.`;
   }
 
   // Fallback high-quality template if Gemini API key is missing or offline
+  const langLower = (options.language || 'English').toLowerCase();
+
+  if (langLower.includes('hindi') || langLower === 'hi') {
+    const chipsHindi =
+      options.highlightChips.length > 0
+        ? `खासकर ${options.highlightChips.slice(0, 2).join(' और ')} बहुत ही बेहतरीन था।`
+        : 'यहाँ की सेवा और कस्टमर सपोर्ट वाकई तारीफ के काबिल है।';
+    return `${options.businessName} पर मेरा अनुभव बेहद शानदार रहा! ${chipsHindi} मैं यहाँ दोबारा आना पसंद करूँगा और सभी को ज़रूर रेकमेंड करता हूँ।`;
+  }
+
+  if (langLower.includes('bengali') || langLower.includes('bangla') || langLower === 'bn') {
+    const chipsBn =
+      options.highlightChips.length > 0
+        ? `বিশেষ করে ${options.highlightChips.slice(0, 2).join(' এবং ')} দারুণ লেগেছে।`
+        : 'এখানকার সেবা ও ব্যবহার সত্যিই প্রশংসনীয়।';
+    return `${options.businessName}-এ আমার অভিজ্ঞতা অত্যন্ত চমৎকার ছিল! ${chipsBn} ভবিষ্যতে নিশ্চিতভাবে আবার আসব এবং সবাইকে রেকমেন্ড করছি।`;
+  }
+
+  if (langLower.includes('marathi') || langLower === 'mr') {
+    return `${options.businessName} येथे माझा अनुभव खूप छान राहिला! उत्तम सेवा आणि दर्जेदार काम. मी नक्कीच इतरांना शिफारस करेन.`;
+  }
+
+  if (langLower.includes('gujarati') || langLower === 'gu') {
+    return `${options.businessName} ખાતે મારો અનુભવ ખૂબ જ ઉત્તમ રહ્યો! સર્વિસ અને ક્વોલિટી ખૂબ જ સારી છે.`;
+  }
+
   const chipMentions =
     options.highlightChips.length > 0
       ? `The ${options.highlightChips.slice(0, 2).join(' and ')} really stood out to me.`

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   KeyRound,
-  Save,
   CheckCircle2,
   AlertCircle,
   Eye,
@@ -9,6 +8,10 @@ import {
   ExternalLink,
   RefreshCw,
   ShieldCheck,
+  Zap,
+  Sparkles,
+  Bot,
+  XCircle,
 } from 'lucide-react';
 import { api } from '../../lib/api';
 import { useToast } from '../../context/ToastContext';
@@ -17,12 +20,18 @@ export function DocsTab() {
   const { showSuccess, showError } = useToast();
 
   const [apiKey, setApiKey] = useState('');
+  const [initialSavedKey, setInitialSavedKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [isConfigured, setIsConfigured] = useState(false);
   const [maskedKey, setMaskedKey] = useState('');
 
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<{
+    status: 'idle' | 'success' | 'failed';
+    message?: string;
+    error?: string;
+  }>({ status: 'idle' });
 
   // Load current API key status
   const loadKeyStatus = async () => {
@@ -35,6 +44,7 @@ export function DocsTab() {
       }
       if (res.key) {
         setApiKey(res.key);
+        setInitialSavedKey(res.key);
       }
     } catch (err) {
       console.error('Failed to load Gemini API key status:', err);
@@ -47,36 +57,69 @@ export function DocsTab() {
     loadKeyStatus();
   }, []);
 
-  // Handle Save
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!apiKey.trim()) {
-      showError('Please enter your Gemini API key before saving.');
+  const isKeyModified = apiKey.trim() !== initialSavedKey.trim();
+
+  // Handle Verify & Save
+  const handleVerifyAndSave = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const keyToTest = apiKey.trim();
+
+    if (!keyToTest) {
+      showError('Please enter a Gemini API key to verify.');
       return;
     }
 
-    setSaving(true);
+    setVerifying(true);
+    setVerificationResult({ status: 'idle' });
+
     try {
-      const res = await api.saveGeminiApiKey(apiKey.trim());
-      if (res.error) {
-        showError(res.error);
+      // 1. Send live "Hi" test request to Gemini API
+      const testRes = await api.testGeminiApiKey(keyToTest);
+
+      if (testRes.success && testRes.message) {
+        // 2. Successful response from Gemini AI -> Save to Supabase
+        const saveRes = await api.saveGeminiApiKey(keyToTest);
+
+        if (saveRes.error) {
+          setVerificationResult({
+            status: 'failed',
+            error: `API key verified, but saving to Supabase failed: ${saveRes.error}`,
+          });
+          showError('Failed to save verified key to Supabase.');
+        } else {
+          setVerificationResult({
+            status: 'success',
+            message: testRes.message,
+          });
+          setInitialSavedKey(keyToTest);
+          setIsConfigured(true);
+          showSuccess('✓ Gemini API verified & saved successfully!');
+          await loadKeyStatus();
+        }
       } else {
-        showSuccess('Gemini API Key saved and activated successfully.');
-        setIsConfigured(true);
-        await loadKeyStatus();
+        // 3. Failed test response -> DO NOT SAVE
+        setVerificationResult({
+          status: 'failed',
+          error: testRes.error || 'Invalid API Key or connection error.',
+        });
+        showError('Verification failed. Invalid API Key was NOT saved.');
       }
-    } catch {
-      showError('Failed to save API key. Please check your network connection.');
+    } catch (err: any) {
+      setVerificationResult({
+        status: 'failed',
+        error: err?.message || 'Network or authentication error occurred.',
+      });
+      showError('Gemini verification failed. API Key was not saved.');
     } finally {
-      setSaving(false);
+      setVerifying(false);
     }
   };
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto pb-12">
-      {/* API Key Input & Save Card */}
+      {/* API Key Input & Verification Card */}
       <div className="bg-white border border-[#dadce0] rounded-xl p-5 sm:p-7 shadow-xs space-y-5">
-        {/* Responsive Header: Flex col on mobile, flex row on sm+ */}
+        {/* Responsive Header */}
         <div className="border-b border-[#dadce0] pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5 flex-wrap">
             <div className="w-8 h-8 rounded-lg bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center shrink-0 shadow-2xs">
@@ -93,12 +136,12 @@ export function DocsTab() {
             ) : isConfigured ? (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#137333] bg-[#e6f4ea] px-2.5 py-0.5 rounded-full border border-[#ceead6] ml-1">
                 <CheckCircle2 className="w-3 h-3 text-[#1e8e3e]" />
-                <span>Active</span>
+                <span>Active &amp; Verified</span>
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#b06000] bg-[#fef7e0] px-2.5 py-0.5 rounded-full border border-[#feefc3] ml-1">
                 <AlertCircle className="w-3 h-3 text-[#b06000]" />
-                <span>Not Configured</span>
+                <span>Not Verified</span>
               </span>
             )}
           </div>
@@ -114,7 +157,7 @@ export function DocsTab() {
           </a>
         </div>
 
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleVerifyAndSave} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-[#5f6368] mb-1.5">
               Enter your Gemini API Key
@@ -126,7 +169,12 @@ export function DocsTab() {
                 type={showKey ? 'text' : 'password'}
                 required
                 value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
+                onChange={(e) => {
+                  setApiKey(e.target.value);
+                  if (verificationResult.status !== 'idle') {
+                    setVerificationResult({ status: 'idle' });
+                  }
+                }}
                 placeholder={maskedKey || 'Paste your Gemini API key here (e.g., AIzaSy... or AQ.Ab8...)'}
                 className="w-full pl-10 pr-24 py-2.5 sm:py-3 bg-white border border-[#dadce0] rounded-lg text-xs sm:text-sm font-mono text-[#202124] focus:outline-none focus:border-[#1a73e8] focus:ring-1 focus:ring-[#1a73e8] transition-colors shadow-2xs"
               />
@@ -135,7 +183,10 @@ export function DocsTab() {
                 {apiKey && (
                   <button
                     type="button"
-                    onClick={() => setApiKey('')}
+                    onClick={() => {
+                      setApiKey('');
+                      setVerificationResult({ status: 'idle' });
+                    }}
                     className="p-1.5 text-xs text-[#5f6368] hover:text-[#202124] rounded hover:bg-[#f1f3f4]"
                     title="Clear input"
                   >
@@ -155,20 +206,74 @@ export function DocsTab() {
 
             <p className="text-[11px] text-[#5f6368] mt-1.5 flex items-center gap-1 leading-normal">
               <ShieldCheck className="w-3.5 h-3.5 text-[#137333] shrink-0" />
-              <span>Your API key is securely stored server-side and never exposed to public website visitors.</span>
+              <span>
+                To protect your account, API keys cannot be saved directly. Clicking verify sends a live "Hi" test prompt to Gemini; only keys with a successful AI response are saved.
+              </span>
             </p>
           </div>
 
-          {/* Action Button: Save Key */}
-          <div className="pt-2">
+          {/* Verification Results Feedback Banner */}
+          {verificationResult.status === 'success' && (
+            <div className="p-4 rounded-xl bg-[#e6f4ea] border border-[#ceead6] text-[#137333] space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-xs sm:text-sm">
+                <CheckCircle2 className="w-4 h-4 text-[#1e8e3e] shrink-0" />
+                <span>Gemini API Key Verified &amp; Saved Successfully!</span>
+              </div>
+              <div className="p-2.5 bg-white/80 rounded-lg border border-[#ceead6] text-xs font-mono text-[#202124] flex items-start gap-2">
+                <Bot className="w-4 h-4 text-[#1a73e8] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-[#5f6368] block text-[10px] uppercase tracking-wider">
+                    Gemini AI Live Response:
+                  </span>
+                  <span>"{verificationResult.message}"</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {verificationResult.status === 'failed' && (
+            <div className="p-4 rounded-xl bg-[#fce8e6] border border-[#fad2cf] text-[#c5221f] space-y-1.5">
+              <div className="flex items-center gap-2 font-bold text-xs sm:text-sm">
+                <XCircle className="w-4 h-4 text-[#d93025] shrink-0" />
+                <span>Verification Failed — Key Was NOT Saved</span>
+              </div>
+              <p className="text-xs text-[#5f6368]">
+                {verificationResult.error || 'The Gemini API rejected this key. Please verify the key in Google AI Studio.'}
+              </p>
+            </div>
+          )}
+
+          {/* Action Button: Verify & Save */}
+          <div className="pt-2 flex flex-wrap items-center gap-3">
             <button
               type="submit"
-              disabled={saving || !apiKey.trim()}
-              className="w-full sm:w-auto px-7 py-2.5 sm:py-3 bg-[#1a73e8] hover:bg-[#1557b0] disabled:opacity-50 text-white font-medium rounded-lg text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              disabled={verifying || !apiKey.trim()}
+              className="w-full sm:w-auto px-6 py-2.5 sm:py-3 bg-[#1a73e8] hover:bg-[#1557b0] disabled:opacity-50 text-white font-medium rounded-lg text-xs sm:text-sm shadow-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
-              {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              <span>Save API Key</span>
+              {verifying ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>Sending "Hi" Test &amp; Verifying...</span>
+                </>
+              ) : isKeyModified || !isConfigured ? (
+                <>
+                  <Zap className="w-4 h-4" />
+                  <span>Verify &amp; Save API Key</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Re-test Connection</span>
+                </>
+              )}
             </button>
+
+            {isKeyModified && (
+              <span className="text-xs font-medium text-[#b06000] bg-[#fef7e0] px-3 py-1.5 rounded-lg border border-[#feefc3] inline-flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5 text-[#b06000]" />
+                <span>Key modified. Click verify to test &amp; save.</span>
+              </span>
+            )}
           </div>
         </form>
       </div>

@@ -7,8 +7,9 @@ export interface LanguageOption {
   name: string;
 }
 
-// Clean English names only - no native scripts in parenthesis
+// Clean language options (English + Indian Regional Languages)
 export const AVAILABLE_LANGUAGES: LanguageOption[] = [
+  { code: 'en', name: 'English' },
   { code: 'hi', name: 'Hindi' },
   { code: 'bn', name: 'Bengali' },
   { code: 'mr', name: 'Marathi' },
@@ -26,8 +27,8 @@ export const AVAILABLE_LANGUAGES: LanguageOption[] = [
 ];
 
 const SEGMENT_COLORS = [
-  '#1a73e8', // Google Blue (Default for English)
-  '#059669', // Emerald Green (For 2nd language)
+  '#1a73e8', // Google Blue
+  '#059669', // Emerald Green
 ];
 
 // Helper: Ensure 2 languages always sum to exactly 100%
@@ -60,16 +61,17 @@ export function LanguageDistributionManager({
   languages,
   onChange,
 }: LanguageDistributionManagerProps) {
-  // Always clean up names on render (remove any parenthetical scripts like "(हिन्दी)")
+  // Clean up and normalize languages
   const cleanLanguages = React.useMemo(() => {
-    let list = languages.map((l) => ({
+    let list = (languages || []).map((l) => ({
       ...l,
       name: l.name.replace(/\s*\([^)]*\)/g, '').trim(),
+      percentage: Number(l.percentage) || 0,
     }));
 
-    // Ensure English is present by default
-    if (!list.some((l) => l.code === 'en' || l.name.toLowerCase() === 'english')) {
-      list = [{ code: 'en', name: 'English', percentage: 100 }, ...list];
+    // If completely empty, default to English
+    if (list.length === 0) {
+      list = [{ code: 'en', name: 'English', percentage: 100 }];
     }
 
     // Enforce maximum 2 languages
@@ -81,15 +83,19 @@ export function LanguageDistributionManager({
     if (list.length === 1) {
       list[0].percentage = 100;
     } else if (list.length === 2) {
-      const sum = (Number(list[0].percentage) || 0) + (Number(list[1].percentage) || 0);
+      const sum = list[0].percentage + list[1].percentage;
       if (sum !== 100) {
-        list[1].percentage = 100 - (Number(list[0].percentage) || 50);
+        list[1].percentage = 100 - list[0].percentage;
       }
     }
     return list;
   }, [languages]);
 
-  const [selectedCode, setSelectedCode] = useState<string>('hi');
+  // Default dropdown selection: first available language not already in list
+  const [selectedCode, setSelectedCode] = useState<string>(() => {
+    const unadded = AVAILABLE_LANGUAGES.find((l) => !cleanLanguages.some((cl) => cl.code === l.code));
+    return unadded ? unadded.code : 'hi';
+  });
 
   const canAddMore = cleanLanguages.length < 2;
 
@@ -125,16 +131,13 @@ export function LanguageDistributionManager({
     }
   };
 
-  // Remove language (English is kept and reverts to 100%)
+  // Remove language (remaining language takes 100%)
   const handleRemoveLanguage = (codeToRemove: string) => {
     if (cleanLanguages.length <= 1) return;
 
     const remaining = cleanLanguages.filter((l) => l.code !== codeToRemove);
-
     if (remaining.length > 0) {
       onChange([{ ...remaining[0], percentage: 100 }]);
-    } else {
-      onChange([{ code: 'en', name: 'English', percentage: 100 }]);
     }
   };
 
@@ -147,7 +150,7 @@ export function LanguageDistributionManager({
             Review Languages &amp; Percentage
           </h3>
           <p className="text-xs text-[#5f6368] mt-0.5">
-            Default English (Min 1, Max 2 languages). Percentage auto-balances to 100%.
+            Select 1 or 2 languages for AI review drafts. Percentages automatically balance to 100%.
           </p>
         </div>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc]">
@@ -167,7 +170,7 @@ export function LanguageDistributionManager({
               key={lang.code}
               className="p-3.5 bg-white border border-[#dadce0] rounded-xl hover:border-[#b0b3b8] transition-all shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
             >
-              {/* Left: Language Name (English only, no script) */}
+              {/* Left: Language Name */}
               <div className="flex items-center gap-2.5 min-w-[150px] shrink-0">
                 <span
                   className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs"
@@ -218,13 +221,13 @@ export function LanguageDistributionManager({
                   </span>
                 </div>
 
-                {/* Remove Button (Disabled if English or sole language) */}
+                {/* Remove Button (Disabled only if sole remaining language) */}
                 <button
                   type="button"
                   onClick={() => handleRemoveLanguage(lang.code)}
                   disabled={isSoleLanguage}
                   className="p-1.5 text-[#5f6368] hover:text-[#d93025] hover:bg-[#fce8e6] disabled:opacity-20 disabled:pointer-events-none rounded-lg transition-colors cursor-pointer shrink-0"
-                  title={isSoleLanguage ? 'Minimum 1 language required' : `Remove ${lang.name}`}
+                  title={isSoleLanguage ? 'At least 1 language is required' : `Remove ${lang.name}`}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -238,7 +241,7 @@ export function LanguageDistributionManager({
       {canAddMore ? (
         <div className="pt-2 border-t border-[#dadce0] space-y-2.5">
           <span className="text-xs font-bold text-[#202124] block">
-            Add Second Language (Optional, Max 2):
+            Add Language (Optional, Max 2):
           </span>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
@@ -269,17 +272,17 @@ export function LanguageDistributionManager({
           </div>
         </div>
       ) : (
-        /* Beautiful, elegant Google-styled notice card (clean stacked mobile-friendly layout) */
+        /* Notice card */
         <div className="p-3.5 bg-[#f8fafd] border border-[#d2e3fc] rounded-xl flex items-start gap-3">
           <div className="w-7 h-7 rounded-lg bg-[#e8f0fe] text-[#1a73e8] flex items-center justify-center shrink-0 mt-0.5">
             <Info className="w-4 h-4" />
           </div>
           <div className="text-xs">
             <div className="font-semibold text-[#1a73e8]">
-              Maximum 2 languages selected (English + 1 regional language)
+              Maximum 2 languages selected (Percentages auto-balance to 100%)
             </div>
             <div className="text-[#5f6368] mt-0.5 leading-relaxed">
-              To choose another regional language, click the trash icon above to remove one first.
+              To choose a different language, click the trash icon next to either language above to remove it first.
             </div>
           </div>
         </div>
