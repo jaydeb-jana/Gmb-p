@@ -15,18 +15,12 @@ import { useAuth } from '../../context/AuthContext';
 import { api } from '../../lib/api';
 import { PricingPlan } from '../../types';
 
-interface PlansTabProps {
-  onNavigateToAdmin?: () => void;
-}
-
-export function PlansTab({ onNavigateToAdmin }: PlansTabProps) {
+export function PlansTab() {
   const { user } = useAuth();
   const { showSuccess } = useToast();
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('yearly');
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-
-  const isSuperAdmin = user?.role === 'admin' || user?.email === 'info@arventaventures.online';
 
   useEffect(() => {
     let isMounted = true;
@@ -49,31 +43,6 @@ export function PlansTab({ onNavigateToAdmin }: PlansTabProps) {
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto pb-16">
-      {/* Super Admin Quick Edit Alert */}
-      {isSuperAdmin && onNavigateToAdmin && (
-        <div className="p-4 bg-[#e8f0fe] border border-[#d2e3fc] rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-2.5">
-            <Crown className="w-5 h-5 text-[#1a73e8]" />
-            <div>
-              <span className="text-xs font-bold text-[#1a73e8] block">
-                Super Administrator Access Active
-              </span>
-              <span className="text-[11px] text-[#5f6368]">
-                You can edit plan pricing, feature checkmarks, and order WhatsApp links anytime.
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onNavigateToAdmin}
-            className="px-3.5 py-1.5 bg-[#1a73e8] hover:bg-[#1557b0] text-white rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer shrink-0"
-          >
-            <Edit className="w-3.5 h-3.5" />
-            <span>Edit Plans in Admin Panel</span>
-          </button>
-        </div>
-      )}
-
       {/* Header */}
       <div className="text-center space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#e8f0fe] text-[#1a73e8] text-xs font-semibold border border-[#d2e3fc]">

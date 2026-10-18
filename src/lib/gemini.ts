@@ -8,10 +8,54 @@ export function getAiClient(apiKeyOverride?: string): GoogleGenAI | null {
   });
 }
 
+export function formatGeminiErrorMessage(rawError: any): string {
+  if (!rawError) {
+    return 'Invalid API Key. Please verify your key from Google AI Studio.';
+  }
+
+  const msg = typeof rawError === 'string' ? rawError : rawError?.message || '';
+
+  if (
+    msg.includes('401') ||
+    msg.includes('UNAUTHENTICATED') ||
+    msg.includes('API key not valid') ||
+    msg.includes('API_KEY_INVALID') ||
+    msg.includes('ACCESS_TOKEN_TYPE_UNSUPPORTED')
+  ) {
+    return 'Invalid API Key. The provided key is not recognized by Google. Please check your API key or generate a new one from Google AI Studio.';
+  }
+
+  if (msg.includes('403') || msg.includes('PERMISSION_DENIED')) {
+    return 'Permission Denied. This API key does not have access to Gemini models. Please ensure Generative Language API is enabled in your Google AI Studio project.';
+  }
+
+  if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+    return 'API Quota Exceeded. This API key has reached its request limit. Please wait a moment or check your quota in Google AI Studio.';
+  }
+
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('network')) {
+    return 'Network Connection Error. Could not connect to Google AI servers. Please check your internet connection.';
+  }
+
+  // Try extracting error.message if Google returned JSON string
+  try {
+    const parsed = JSON.parse(msg);
+    if (parsed?.error?.message) {
+      const inner = parsed.error.message;
+      if (inner.includes('API key not valid')) {
+        return 'Invalid API Key. The provided key is not recognized by Google. Please check your API key in Google AI Studio.';
+      }
+      return `API Error: ${inner}`;
+    }
+  } catch {}
+
+  return 'Invalid API Key. Verification failed. Please check your key from Google AI Studio.';
+}
+
 export async function testGeminiApiKey(apiKey: string): Promise<{ valid: boolean; message: string }> {
   const key = apiKey.trim();
   if (!key) {
-    return { valid: false, message: 'Please provide a valid Gemini API key.' };
+    return { valid: false, message: 'Please provide a valid API key.' };
   }
   try {
     const ai = new GoogleGenAI({
@@ -19,14 +63,14 @@ export async function testGeminiApiKey(apiKey: string): Promise<{ valid: boolean
     });
     const response = await ai.models.generateContent({
       model: 'gemini-3.8-flash',
-      contents: 'Hi! Please reply with a short friendly greeting confirming connection.',
+      contents: 'Respond with OK',
     });
     if (response && response.text) {
-      return { valid: true, message: response.text.trim() };
+      return { valid: true, message: 'API key verified and active.' };
     }
     return { valid: false, message: 'Received empty response from Gemini API.' };
   } catch (err: any) {
-    return { valid: false, message: err?.message || 'Authentication failed. Please verify your API key.' };
+    return { valid: false, message: formatGeminiErrorMessage(err) };
   }
 }
 

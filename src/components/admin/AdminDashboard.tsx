@@ -31,10 +31,10 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
 interface AdminDashboardProps {
-  onSwitchToCustomerPortal: () => void;
+  onUserImpersonated?: () => void;
 }
 
-export function AdminDashboard({ onSwitchToCustomerPortal }: AdminDashboardProps) {
+export function AdminDashboard({ onUserImpersonated }: AdminDashboardProps = {}) {
   const { user, impersonateUser } = useAuth();
   const { showSuccess, showError } = useToast();
 
@@ -164,7 +164,7 @@ export function AdminDashboard({ onSwitchToCustomerPortal }: AdminDashboardProps
     try {
       await impersonateUser(targetUser);
       showSuccess(`Logged in as ${targetUser.fullName} (${targetUser.businessName || 'Business'}).`);
-      onSwitchToCustomerPortal();
+      if (onUserImpersonated) onUserImpersonated();
     } catch {
       showError('Failed to enter user account.');
     }
@@ -344,22 +344,15 @@ export function AdminDashboard({ onSwitchToCustomerPortal }: AdminDashboardProps
             </p>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0 flex-wrap">
-            <button
-              type="button"
-              onClick={onSwitchToCustomerPortal}
-              className="px-4 py-2.5 bg-white text-[#1a73e8] hover:bg-[#f8f9fa] rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer active:scale-95"
-            >
-              <Building2 className="w-4 h-4" />
-              <span>Customer Portal View</span>
-            </button>
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={loadUsers}
               title="Refresh Data"
-              className="p-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl transition-all cursor-pointer border border-white/20"
+              className="px-3.5 py-2.5 bg-white/15 hover:bg-white/25 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border border-white/20 flex items-center gap-2"
             >
               <RefreshCw className={`w-4 h-4 ${loadingUsers ? 'animate-spin' : ''}`} />
+              <span>Refresh Records</span>
             </button>
           </div>
         </div>

@@ -98,21 +98,6 @@ export function DashboardHeader({
 
           {/* Right: User Profile Pill & Account Menu */}
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-            {/* Super Admin Quick Access Button */}
-            {isSuperAdmin && onNavigateToAdmin && (
-              <button
-                type="button"
-                onClick={onNavigateToAdmin}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer ${
-                  activeTab === 'admin_panel'
-                    ? 'bg-[#1a73e8] text-white shadow-xs'
-                    : 'bg-[#e8f0fe] text-[#1a73e8] border border-[#d2e3fc] hover:bg-[#d2e3fc]'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-[#fbbc04]" />
-                <span className="hidden sm:inline">Admin Panel</span>
-              </button>
-            )}
 
             {/* User Profile Pill */}
             <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-[#dadce0]">

@@ -223,45 +223,6 @@ export function DashboardNav({
 
         {/* Navigation Items List */}
         <div className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-          {/* Super Admin Control Center Item */}
-          {(user?.role === 'admin' || user?.email === 'info@arventaventures.online') && (
-            <div className="mb-2.5 pb-2.5 border-b border-[#dadce0]">
-              <button
-                type="button"
-                onClick={() => handleSelectTab('admin_panel')}
-                className={`w-full flex items-center justify-between p-3 rounded-xl transition-all cursor-pointer text-left group ${
-                  activeTab === 'admin_panel'
-                    ? 'bg-gradient-to-r from-[#1a73e8] to-[#1557b0] text-white font-semibold shadow-xs'
-                    : 'bg-[#e8f0fe] text-[#1a73e8] hover:bg-[#d2e3fc] border border-[#d2e3fc]'
-                }`}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                      activeTab === 'admin_panel'
-                        ? 'bg-white/20 text-white'
-                        : 'bg-[#1a73e8] text-white shadow-2xs'
-                    }`}
-                  >
-                    <ShieldCheck className="w-5 h-5 text-[#fbbc04]" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-extrabold uppercase tracking-wider flex items-center gap-1">
-                      <span>Admin Control Center</span>
-                    </div>
-                    <div
-                      className={`text-[11px] truncate ${
-                        activeTab === 'admin_panel' ? 'text-white/80' : 'text-[#5f6368]'
-                      }`}
-                    >
-                      Users, Plans &amp; Root Controls
-                    </div>
-                  </div>
-                </div>
-                <ChevronRight className="w-4 h-4 shrink-0 opacity-70" />
-              </button>
-            </div>
-          )}
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;

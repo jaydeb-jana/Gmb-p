@@ -204,30 +204,24 @@ export function DocsTab() {
               </div>
             </div>
 
-            <p className="text-[11px] text-[#5f6368] mt-1.5 flex items-center gap-1 leading-normal">
+            <p className="text-[11px] text-[#5f6368] mt-1.5 flex items-center gap-1.5 leading-normal">
               <ShieldCheck className="w-3.5 h-3.5 text-[#137333] shrink-0" />
               <span>
-                To protect your account, API keys cannot be saved directly. Clicking verify sends a live "Hi" test prompt to Gemini; only keys with a successful AI response are saved.
+                To ensure security, API keys are tested and verified before saving. Only valid, active keys will be accepted.
               </span>
             </p>
           </div>
 
           {/* Verification Results Feedback Banner */}
           {verificationResult.status === 'success' && (
-            <div className="p-4 rounded-xl bg-[#e6f4ea] border border-[#ceead6] text-[#137333] space-y-1.5">
+            <div className="p-4 rounded-xl bg-[#e6f4ea] border border-[#ceead6] text-[#137333] space-y-1">
               <div className="flex items-center gap-2 font-bold text-xs sm:text-sm">
                 <CheckCircle2 className="w-4 h-4 text-[#1e8e3e] shrink-0" />
-                <span>Gemini API Key Verified &amp; Saved Successfully!</span>
+                <span>API Key Verified &amp; Saved Successfully!</span>
               </div>
-              <div className="p-2.5 bg-white/80 rounded-lg border border-[#ceead6] text-xs font-mono text-[#202124] flex items-start gap-2">
-                <Bot className="w-4 h-4 text-[#1a73e8] shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-bold text-[#5f6368] block text-[10px] uppercase tracking-wider">
-                    Gemini AI Live Response:
-                  </span>
-                  <span>"{verificationResult.message}"</span>
-                </div>
-              </div>
+              <p className="text-xs text-[#137333]">
+                Your API key is valid, connected to Google AI Studio, and ready to generate reviews.
+              </p>
             </div>
           )}
 
@@ -235,10 +229,10 @@ export function DocsTab() {
             <div className="p-4 rounded-xl bg-[#fce8e6] border border-[#fad2cf] text-[#c5221f] space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-xs sm:text-sm">
                 <XCircle className="w-4 h-4 text-[#d93025] shrink-0" />
-                <span>Verification Failed — Key Was NOT Saved</span>
+                <span>Invalid API Key — Key Was NOT Saved</span>
               </div>
-              <p className="text-xs text-[#5f6368]">
-                {verificationResult.error || 'The Gemini API rejected this key. Please verify the key in Google AI Studio.'}
+              <p className="text-xs text-[#5f6368] leading-relaxed">
+                {verificationResult.error || 'This API key is not valid. Please enter a valid, active API key from Google AI Studio.'}
               </p>
             </div>
           )}
@@ -253,7 +247,7 @@ export function DocsTab() {
               {verifying ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Sending "Hi" Test &amp; Verifying...</span>
+                  <span>Verifying API Key...</span>
                 </>
               ) : isKeyModified || !isConfigured ? (
                 <>
