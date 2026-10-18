@@ -133,7 +133,7 @@ export function DashboardNav({
     },
     {
       id: 'docs' as DashboardTab,
-      label: 'Gemini AI API',
+      label: 'API',
       icon: FileText,
       path: TAB_ROUTES['docs'],
       badge: null,

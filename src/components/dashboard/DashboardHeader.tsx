@@ -21,7 +21,7 @@ const TAB_TITLES: Record<DashboardTab, string> = {
   business_settings: 'Business Profile',
   review_links: 'Review Link & QR Stand',
   review_replies: 'AI Review',
-  docs: 'Gemini AI API',
+  docs: 'API',
   plans: 'Plans',
   contact: 'Contact',
   security: 'Data Security',
